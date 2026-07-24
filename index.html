@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KTS Singen – Spielplan 2027/28</title>
+<style>
+  :root{
+    /* KTS Singen Farbwelt: gedämpftes Magenta + Gold (wie Mediaplaner) */
+    --akzent:#7e3167; --akzent-hell:#f4eef3; --gruen:#2e7d32; --gruen-hell:#e6f3e6;
+    --gelb:#b26a00; --gelb-hell:#fdf3e0; --rot:#b3261e; --rot-hell:#fbeaea;
+    --grau:#6e6870; --grau-hell:#ece6eb; --rand:#d9d2dc; --text:#1d1a1e;
+    --gold:#ffcc66;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;margin:0;background:#fbf9fa;color:var(--text);font-size:16px;}
+  header{background:var(--text);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--gold);}
+  header h1{font-size:20px;margin:0;font-weight:600;}
+  header .saison{color:var(--gold);font-size:14px;}
+  nav{display:flex;background:#fff;border-bottom:2px solid var(--rand);padding:0 12px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+  nav button{border:none;background:none;padding:14px 18px;font-size:16px;cursor:pointer;color:var(--grau);border-bottom:3px solid transparent;font-weight:500;}
+  nav button.aktiv{color:var(--akzent);border-bottom-color:var(--akzent);font-weight:700;}
+  main{padding:20px;max-width:1250px;margin:0 auto;}
+  h2{font-size:20px;margin:8px 0 14px;}
+  h3{font-size:16px;margin:16px 0 8px;}
+  .karten{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+  .karte{background:#fff;border:1px solid var(--rand);border-radius:10px;padding:14px 16px;}
+  .karte .wert{font-size:26px;font-weight:700;}
+  .karte .label{font-size:13px;color:var(--grau);margin-top:2px;}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--rand);border-radius:8px;overflow:hidden;}
+  th{background:var(--akzent-hell);text-align:left;padding:10px;font-size:13px;color:var(--akzent);text-transform:uppercase;letter-spacing:.3px;}
+  td{padding:10px;border-top:1px solid var(--rand);font-size:15px;vertical-align:top;}
+  tr.klickbar{cursor:pointer;}
+  tr.klickbar:hover{background:var(--akzent-hell);}
+  .pille{display:inline-block;padding:3px 10px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;}
+  .sgebucht{background:var(--gruen-hell);color:var(--gruen);}
+  .soptioniert{background:var(--akzent-hell);color:var(--akzent);}
+  .sangefragt{background:var(--gelb-hell);color:var(--gelb);}
+  .sIdee{background:var(--grau-hell);color:var(--grau);}
+  .sabgesagt{background:var(--rot-hell);color:var(--rot);text-decoration:line-through;}
+  .sohne{background:var(--gelb-hell);color:var(--gelb);border:1px dashed var(--gelb);}
+  tr.zAbgesagt td{background:var(--grau-hell);opacity:.55;}
+  button.aktion{background:var(--akzent);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer;font-weight:600;}
+  button.aktion.sekundaer{background:#fff;color:var(--akzent);border:2px solid var(--akzent);}
+  button.aktion.klein{padding:6px 10px;font-size:13px;}
+  button.aktion:hover{opacity:.9;}
+  .leiste{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  select,input[type=text],input[type=number],input[type=date],textarea{padding:9px;border:1px solid var(--rand);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;}
+  dialog{border:none;border-radius:12px;padding:0;max-width:640px;width:94%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+  dialog::backdrop{background:rgba(0,0,0,.35);}
+  .dkopf{background:var(--akzent);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+  .dkopf h3{margin:0;font-size:17px;}
+  .dkopf button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
+  .dinhalt{padding:18px 20px;}
+  .feld{margin-bottom:12px;}
+  .feld label{display:block;font-size:13px;font-weight:600;color:var(--grau);margin-bottom:4px;}
+  .feld input,.feld select,.feld textarea{width:100%;}
+  .zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .hinweis{background:var(--akzent-hell);border-left:4px solid var(--akzent);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
+  .warnbox{background:var(--gelb-hell);border-left:4px solid var(--gelb);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
+  .rotbox{background:var(--rot-hell);border-left:4px solid var(--rot);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;font-weight:600;}
+  .kal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .kalwt{font-size:12px;font-weight:700;color:var(--akzent);text-align:center;padding:4px 0;}
+  .kaltag{background:#fff;border:1px solid var(--rand);border-radius:6px;min-height:88px;padding:4px;font-size:12px;}
+  .kaltag.kalleer{background:transparent;border:none;min-height:0;}
+  .kaltag.kalheute{outline:2px solid var(--akzent);}
+  .kaltag.kalkollision{outline:2px solid var(--rot);}
+  .kalnum{font-weight:700;color:var(--grau);font-size:11px;}
+  .kalitem{border-radius:4px;padding:2px 4px;margin-top:3px;cursor:pointer;font-size:11px;line-height:1.25;overflow:hidden;}
+  .fussnote{color:var(--grau);font-size:13px;margin-top:6px;}
+  .budgetfeld{width:110px;font-size:20px;font-weight:700;border:1px dashed var(--rand);padding:2px 6px;}
+  .balkenzeile{display:flex;align-items:center;gap:10px;margin:6px 0;}
+  .balkenzeile .bname{width:150px;font-size:14px;}
+  .balken{flex:1;background:var(--grau-hell);border-radius:6px;height:22px;position:relative;overflow:hidden;}
+  .balken > div{height:100%;background:var(--akzent);border-radius:6px;}
+  .balkenzeile .bwert{width:130px;font-size:14px;text-align:right;}
+  @media print{ nav,header .werkzeuge,button.aktion{display:none!important;} body{background:#fff;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>KTS Singen · Spielplan</h1>
+  <span class="saison">Saison 2027/28 · Programmplanung</span>
+  <span style="flex:1"></span>
+  <span class="werkzeuge" style="display:flex;align-items:center;gap:10px;">
+    <span id="syncStatus" style="font-size:13px;color:#cfd4da;white-space:nowrap;">● lade…</span>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="datenExport()">Daten sichern</button>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="document.getElementById('importDatei').click()">Daten laden</button>
+    <input type="file" id="importDatei" accept=".json" style="display:none" onchange="datenImport(this)">
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="abmelden()" title="Anmeldung auf diesem Rechner aufheben">Abmelden</button>
+  </span>
+</header>
+<nav id="hauptnav">
+  <button data-tab="uebersicht" class="aktiv" onclick="zeigeTab('uebersicht')">Übersicht</button>
+  <button data-tab="plan" onclick="zeigeTab('plan')">Spielplan</button>
+  <button data-tab="kalender" onclick="zeigeTab('kalender')">Kalender</button>
+</nav>
+<main id="inhalt"></main>
+
+<dialog id="vaDialog">
+  <div class="dkopf"><h3 id="vdTitel">Veranstaltung</h3><button onclick="document.getElementById('vaDialog').close()">×</button></div>
+  <div class="dinhalt">
+    <input type="hidden" id="vdId">
+    <div class="zweispaltig">
+      <div class="feld"><label>Datum</label><input type="date" id="vdDatum"></div>
+      <div class="feld"><label>Status</label><select id="vdStatus">
+        <option value="">– ohne Status –</option><option>Idee</option><option>angefragt</option>
+        <option>optioniert</option><option>gebucht</option><option>abgesagt</option>
+      </select></div>
+    </div>
+    <div class="feld"><label>Titel</label><input type="text" id="vdTitelFeld"></div>
+    <div class="zweispaltig">
+      <div class="feld"><label>Sparte</label><select id="vdSparte"></select></div>
+      <div class="feld"><label>Agentur / Tournee</label><input type="text" id="vdAgentur"></div>
+    </div>
+    <div class="zweispaltig">
+      <div class="feld"><label>Gage (€)</label><input type="number" id="vdGage" min="0" step="100"></div>
+      <div class="feld"><label>Nebenkosten (€)</label><input type="number" id="vdNeben" min="0" step="100"></div>
+    </div>
+    <div class="feld"><label>Anmerkung</label><input type="text" id="vdAnmerkung"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="aktion sekundaer" id="vdLoeschen" onclick="vaLoeschen()">Löschen</button>
+      <button class="aktion" onclick="vaSpeichern()">Speichern</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ================= STAMMDATEN ================= */
+const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Kindertheater","Sonstiges"];
+const STATI = ["gebucht","optioniert","angefragt","Idee","abgesagt"];
+
+/* Vorbefüllt aus KTS_Spielplan_27_28 Planung#3.xlsx */
+const START_VA = [
+ {vid:1, datum:"2027-10-02",titel:"1. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:""},
+ {vid:2, datum:"2026-10-15",titel:"Techno Ballet Odessey",sparte:"Musik/Show",agentur:"Berlin Ballet",status:"Idee",gage:25,neben:10000,anmerkung:""},
+ {vid:3, datum:"2027-10-21",titel:"Kleine Eheverbrechen",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10000,neben:2500,anmerkung:""},
+ {vid:4, datum:"2027-10-28",titel:"Der Sohn",sparte:"Schauspiel",agentur:"Tourerleben",status:"optioniert",gage:9000,neben:2000,anmerkung:""},
+ {vid:5, datum:"2027-11-27",titel:"Fitzek",sparte:"Schauspiel",agentur:"Showslot",status:"gebucht",gage:25000,neben:10000,anmerkung:""},
+ {vid:6, datum:"2027-11-27",titel:"1. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:"gleicher Tag wie Fitzek – Überschneidung prüfen"},
+ {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,neben:0,anmerkung:""},
+ {vid:8, datum:"2027-12-06",titel:"Der gestiefelte Kater",sparte:"Kindertheater",agentur:"Horizont",status:"optioniert",gage:9000,neben:2000,anmerkung:"2. Vorstellung am 07.12.2027"},
+ {vid:9, datum:"2027-12-11",titel:"Weihnachten in Prag",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:8500,neben:2000,anmerkung:""},
+ {vid:10,datum:"2027-12-12",titel:"xxx",sparte:"Sonstiges",agentur:"xxx",status:"",gage:0,neben:0,anmerkung:""},
+ {vid:11,datum:"2028-01-08",titel:"Neujahrskonzert / Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:"Altliste: '3. Symphoniekonzert' – Nummerierung prüfen"},
+ {vid:12,datum:"2028-01-15",titel:"Die lustigen Weiber von Windsor",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,neben:0,anmerkung:""},
+ {vid:13,datum:"2028-01-20",titel:"Brodas",sparte:"Musik/Show",agentur:"Landgraf",status:"optioniert",gage:11000,neben:3000,anmerkung:"lt. Altliste: fragwürdig wg. anderer Städte"},
+ {vid:14,datum:"2028-02-09",titel:"Der Videobeweis",sparte:"Schauspiel",agentur:"Berlin",status:"optioniert",gage:9000,neben:2000,anmerkung:""},
+ {vid:15,datum:"2028-02-12",titel:"2. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:""},
+ {vid:16,datum:"2028-02-14",titel:"Meister Eder (Pumuckl)",sparte:"Kindertheater",agentur:"Cocomico",status:"optioniert",gage:8000,neben:0,anmerkung:"2. Vorstellung Dienstag?"},
+ {vid:17,datum:"2028-03-09",titel:"Kardinalfehler",sparte:"Schauspiel",agentur:"Landgraf",status:"optioniert",gage:9000,neben:1500,anmerkung:""},
+ {vid:18,datum:"2028-03-17",titel:"53 Sonntage",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10100,neben:1900,anmerkung:"Altliste: Betrag 10.100 € notiert – prüfen"},
+ {vid:19,datum:"2028-03-18",titel:"3. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:""},
+ {vid:20,datum:"2028-04-01",titel:"3. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:"Nummerierung prüfen (s. 08.01.2028)"},
+ {vid:21,datum:"2028-04-07",titel:"Alle 7 Wellen",sparte:"Komödie",agentur:"Hamburger Kammerspiele",status:"optioniert",gage:6500,neben:2500,anmerkung:""},
+ {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"umbreit",status:"",gage:0,neben:0,anmerkung:""},
+ {vid:23,datum:"2028-05-06",titel:"Die Große Zeit",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:15000,neben:6000,anmerkung:""}
+];
+
+/* ================= ZENTRALE SPEICHERUNG (Supabase) ================= */
+const SYNC_URL = "https://cmisspajmbkuthhlncgd.supabase.co";
+const SYNC_KEY = "sb_publishable_884ULDr2kvptTTh8CyVX4g_afzMzT2Q";
+const PLAN_ID  = "kts-spielplan-2728";
+
+const SPEICHER = "kts_spielplan_2728_v1";
+const cloudAktiv = () => SYNC_URL !== "" && SYNC_KEY !== "";
+let syncVersion = 0;
+let syncDirty = false;
+let syncTimer = null, syncLaeuft = false;
+
+let daten = ladeLokal();
+function frischeDaten(){
+  return { veranstaltungen: JSON.parse(JSON.stringify(START_VA)),
+    budget2027: 90000, budget2028: 100000, sponsoren: 5000, uebertrag: 38000, naechsteVid: 24 };
+}
+function ladeLokal(){
+  let roh = null;
+  try{ roh = localStorage.getItem(SPEICHER); }catch(e){}
+  if(roh){
+    try{
+      const obj = JSON.parse(roh);
+      if(obj && obj.__cache){ syncVersion = obj.version||0; syncDirty = !!obj.dirty; return obj.daten; }
+      return obj;
+    }catch(e){
+      try{ localStorage.setItem(SPEICHER+"_defekt_"+Date.now(), roh); }catch(_){}
+      return frischeDaten();
+    }
+  }
+  return frischeDaten();
+}
+function migriere(){
+  if(!daten.veranstaltungen) daten.veranstaltungen = [];
+  if(daten.budget2027===undefined) daten.budget2027 = 90000;
+  if(daten.budget2028===undefined) daten.budget2028 = 100000;
+  if(daten.sponsoren===undefined) daten.sponsoren = 5000;
+  if(daten.uebertrag===undefined) daten.uebertrag = 38000;
+  if(!daten.naechsteVid) daten.naechsteVid = daten.veranstaltungen.reduce((m,v)=>Math.max(m, v.vid||0), 0) + 1;
+}
+migriere();
+
+function speichern(){
+  if(cloudAktiv()) syncDirty = true;
+  lokalSichern();
+  if(cloudAktiv()){
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushServer, 800);
+    syncStatus("speichert…","gelb");
+  }
+}
+function lokalSichern(){
+  try{
+    const alt = localStorage.getItem(SPEICHER);
+    const neu = JSON.stringify(daten);
+    if(alt){
+      let altDaten = alt;
+      try{ const o = JSON.parse(alt); altDaten = JSON.stringify(o && o.__cache ? o.daten : o); }catch(_){}
+      if(altDaten !== neu) localStorage.setItem(SPEICHER+"_prev", altDaten);
+    }
+    localStorage.setItem(SPEICHER, JSON.stringify({__cache:true, version:syncVersion, dirty:syncDirty, daten:daten}));
+  }catch(e){}
+}
+
+/* ---------- Anmeldung (gemeinsamer Team-Zugang, wie Mediaplaner) ---------- */
+const AUTH_EMAIL = "team@kts-singen.de";
+const AUTH_SPEICHER = SPEICHER + "_auth";
+
+function authSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(AUTH_SPEICHER));
+    if(s && s.access_token) return s;
+  }catch(e){}
+  return null;
+}
+function authSpeichern(tok){
+  try{ localStorage.setItem(AUTH_SPEICHER, JSON.stringify({access_token:tok.access_token,
+    refresh_token:tok.refresh_token, expires_at: Date.now() + ((tok.expires_in||3600)-60)*1000})); }catch(e){}
+}
+function abmelden(){
+  if(!cloudAktiv()){ alert("Kein Server eingetragen – keine Anmeldung aktiv."); return; }
+  if(!confirm("Anmeldung auf diesem Rechner aufheben? Beim nächsten Öffnen wird wieder das Team-Passwort gebraucht.")) return;
+  try{ localStorage.removeItem(AUTH_SPEICHER); }catch(e){}
+  location.reload();
+}
+async function anmelden(passwort){
+  const r = await fetch(SYNC_URL + "/auth/v1/token?grant_type=password", {method:"POST",
+    headers:{"apikey":SYNC_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify({email:AUTH_EMAIL, password:passwort})});
+  if(!r.ok) return false;
+  authSpeichern(await r.json());
+  return true;
+}
+async function tokenErneuern(){
+  const s = authSession();
+  if(!s || !s.refresh_token) return false;
+  try{
+    const r = await fetch(SYNC_URL + "/auth/v1/token?grant_type=refresh_token", {method:"POST",
+      headers:{"apikey":SYNC_KEY, "Content-Type":"application/json"},
+      body: JSON.stringify({refresh_token:s.refresh_token})});
+    if(!r.ok) return false;
+    authSpeichern(await r.json());
+    return true;
+  }catch(e){ return false; }
+}
+function loginZeigen(){
+  syncStatus("Anmeldung erforderlich","gelb");
+  if(document.getElementById("loginOverlay")) return;
+  const o = document.createElement("div");
+  o.id = "loginOverlay";
+  o.style.cssText = "position:fixed;inset:0;z-index:2000;background:var(--text);display:flex;align-items:center;justify-content:center;";
+  o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:28px 30px;max-width:380px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
+    + '<h3 style="margin:0 0 6px;font-size:18px;">KTS Singen · Spielplan 27/28</h3>'
+    + '<p style="margin:0 0 14px;color:var(--grau);font-size:14px;">Bitte das Team-Passwort eingeben (dasselbe wie beim Mediaplaner). Der Browser merkt sich die Anmeldung auf diesem Rechner.</p>'
+    + '<input type="password" id="loginPw" style="width:100%;padding:10px;border:1px solid var(--rand);border-radius:8px;font-size:16px;" placeholder="Team-Passwort" autocomplete="current-password">'
+    + '<div id="loginFehler" style="color:var(--rot);font-size:13px;min-height:18px;margin:6px 0;"></div>'
+    + '<button class="aktion" style="width:100%;" onclick="loginVersuch()">Anmelden</button></div>';
+  document.body.appendChild(o);
+  const pw = document.getElementById("loginPw");
+  pw.addEventListener("keydown", e => { if(e.key === "Enter") loginVersuch(); });
+  pw.focus();
+}
+async function loginVersuch(){
+  const pw = document.getElementById("loginPw").value;
+  const f = document.getElementById("loginFehler");
+  if(!pw){ f.textContent = "Bitte Passwort eingeben."; return; }
+  f.textContent = "prüfe…";
+  let ok = false;
+  try{ ok = await anmelden(pw); }catch(e){}
+  if(ok){
+    const o = document.getElementById("loginOverlay"); if(o) o.remove();
+    initCloud();
+  } else {
+    f.textContent = "Passwort falsch oder keine Verbindung zum Server.";
+  }
+}
+async function sbFetch(pfad, opt){
+  opt = opt || {};
+  let s = authSession();
+  if(s && Date.now() > s.expires_at){ await tokenErneuern(); s = authSession(); }
+  opt.headers = Object.assign({"apikey":SYNC_KEY,
+    "Authorization":"Bearer " + (s ? s.access_token : SYNC_KEY),
+    "Content-Type":"application/json"}, opt.headers||{});
+  let r = await fetch(SYNC_URL + "/rest/v1/" + pfad, opt);
+  if((r.status === 401 || r.status === 403) && s){
+    if(await tokenErneuern()){
+      const s2 = authSession();
+      opt.headers["Authorization"] = "Bearer " + s2.access_token;
+      r = await fetch(SYNC_URL + "/rest/v1/" + pfad, opt);
+    }
+    if(r.status === 401 || r.status === 403){
+      try{ localStorage.removeItem(AUTH_SPEICHER); }catch(e){}
+      loginZeigen();
+    }
+  }
+  return r;
+}
+
+async function initCloud(){
+  if(!cloudAktiv()){ syncStatus("nur lokal – kein Server eingetragen","grau"); return; }
+  if(!authSession()){ loginZeigen(); return; }
+  syncStatus("lade…","gelb");
+  try{
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+    if(!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    if(rows.length===0){
+      const c = await sbFetch("mediaplan", {method:"POST", headers:{"Prefer":"return=representation"},
+        body: JSON.stringify({id:PLAN_ID, version:1, daten:daten})});
+      if(!c.ok) throw new Error(c.status);
+      syncVersion = 1; syncDirty = false; lokalSichern();
+      syncStatus("synchron ✓","gruen");
+    } else {
+      const srv = rows[0];
+      if(syncDirty && syncVersion === srv.version){
+        syncStatus("sende offene Änderungen…","gelb");
+        await pushServer();
+      } else if(syncDirty && syncVersion !== srv.version){
+        konfliktBanner(srv);
+      } else {
+        daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
+        neuZeichnen(); syncStatus("synchron ✓","gruen");
+      }
+    }
+  }catch(e){
+    syncStatus("offline – Änderungen lokal gepuffert","rot");
+  }
+  if(!window.__pollLaeuft){ window.__pollLaeuft = true; setInterval(pollServer, 60000); }
+}
+async function pushServer(){
+  if(!cloudAktiv() || syncLaeuft) return;
+  syncLaeuft = true;
+  try{
+    const neu = syncVersion + 1;
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&version=eq."+syncVersion,
+      {method:"PATCH", headers:{"Prefer":"return=representation"},
+       body: JSON.stringify({daten:daten, version:neu, updated_at:new Date().toISOString()})});
+    if(!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    if(rows.length===0){
+      const g = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+      const srvRows = g.ok ? await g.json() : [];
+      if(srvRows.length) konfliktBanner(srvRows[0]);
+      else syncStatus("Fehler beim Speichern","rot");
+    } else {
+      syncVersion = neu; syncDirty = false; lokalSichern();
+      syncStatus("synchron ✓","gruen");
+    }
+  }catch(e){
+    syncStatus("offline – Änderungen lokal gepuffert","rot");
+  }
+  syncLaeuft = false;
+}
+async function pollServer(){
+  if(!cloudAktiv() || syncDirty || syncLaeuft) return;
+  try{
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+    if(!r.ok) return;
+    const rows = await r.json();
+    if(rows.length && rows[0].version > syncVersion){
+      daten = rows[0].daten; syncVersion = rows[0].version; migriere(); lokalSichern();
+      neuZeichnen(); syncStatus("aktualisiert – neuer Stand übernommen ✓","gruen");
+    }
+  }catch(e){}
+}
+function neuZeichnen(){
+  const dlg = document.getElementById("vaDialog");
+  if(dlg && dlg.open) return;
+  zeigeTab(aktuellerTab);
+}
+function syncStatus(text, farbe){
+  const el = document.getElementById("syncStatus"); if(!el) return;
+  el.textContent = "● " + text;
+  el.style.color = {gruen:"#9fdca7", gelb:"#ffd98e", rot:"#ffb3ad", grau:"#cfd4da"}[farbe] || "#cfd4da";
+}
+function konfliktBanner(srv){
+  syncStatus("Konflikt – bitte entscheiden","rot");
+  window.__konfliktServer = srv;
+  let b = document.getElementById("konfliktBanner");
+  if(b) b.remove();
+  b = document.createElement("div");
+  b.id = "konfliktBanner";
+  b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--rot-hell);border-bottom:3px solid var(--rot);padding:12px 20px;font-size:15px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;";
+  b.innerHTML = '<b>⚠ Gleichzeitige Änderung:</b> Jemand anderes hat zwischenzeitlich gespeichert. ' +
+    '<button class="aktion klein" onclick="konfliktServerNehmen()">Dessen Stand übernehmen (meine letzte Änderung verwerfen)</button> ' +
+    '<button class="aktion sekundaer klein" onclick="konfliktMeinsErzwingen()">Meinen Stand durchsetzen (dessen Änderung überschreiben)</button>';
+  document.body.appendChild(b);
+}
+function konfliktServerNehmen(){
+  const srv = window.__konfliktServer; if(!srv) return;
+  daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
+  const b = document.getElementById("konfliktBanner"); if(b) b.remove();
+  const dlg = document.getElementById("vaDialog"); if(dlg && dlg.open) dlg.close();
+  zeigeTab(aktuellerTab);
+  syncStatus("synchron ✓","gruen");
+}
+async function konfliktMeinsErzwingen(){
+  const srv = window.__konfliktServer; if(!srv) return;
+  syncVersion = srv.version;
+  syncDirty = true; lokalSichern();
+  const b = document.getElementById("konfliktBanner"); if(b) b.remove();
+  await pushServer();
+}
+function datenExport(){
+  const blob = new Blob([JSON.stringify(daten,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "KTS_Spielplan_Sicherung_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+}
+function datenImport(inp){
+  const f = inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ daten = JSON.parse(r.result); migriere(); speichern(); zeigeTab(aktuellerTab); alert("Daten geladen."); }catch(e){ alert("Datei konnte nicht gelesen werden."); } };
+  r.readAsText(f);
+}
+
+/* ================= HILFEN ================= */
+const euro = n => (Math.round(n)).toLocaleString("de-DE") + " €";
+const datumDE = iso => { if(!iso) return "–"; const [j,m,t] = iso.split("-"); return t+"."+m+"."+j; };
+const gesamt = v => (+v.gage||0) + (+v.neben||0);
+const zaehltBudget = v => v.status !== "abgesagt";
+function gesamtBudget(){ return (+daten.budget2027||0)+(+daten.budget2028||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
+function verplant(){ return daten.veranstaltungen.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0); }
+function statusKlasse(s){ return s ? "s"+s : "sohne"; }
+function statusText(s){ return s || "ohne Status"; }
+function sortiert(){ return daten.veranstaltungen.slice().sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")); }
+
+/* Warnungen: Budget, Terminkollisionen, fehlender Status, fehlendes Datum */
+function warnungen(){
+  const w = [];
+  const frei = gesamtBudget() - verplant();
+  if(frei < 0) w.push({art:"rot", text:"Budget überzogen um <b>"+euro(-frei)+"</b> – Positionen absagen, verhandeln oder Budget erhöhen."});
+  const tage = {};
+  daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.datum).forEach(v=>{ (tage[v.datum]=tage[v.datum]||[]).push(v); });
+  Object.entries(tage).filter(([d,l])=>l.length>1).sort().forEach(([d,l])=>{
+    w.push({art:"gelb", text:"<b>"+datumDE(d)+":</b> "+l.length+" Veranstaltungen am selben Tag ("+l.map(v=>v.titel).join(", ")+") – Überschneidung prüfen."});
+  });
+  const ohneStatus = daten.veranstaltungen.filter(v=>!v.status);
+  if(ohneStatus.length>0) w.push({art:"gelb", text:ohneStatus.length+" Veranstaltung(en) ohne Status: "+ohneStatus.map(v=>v.titel).join(", ")+"."});
+  const ohneDatum = daten.veranstaltungen.filter(v=>!v.datum);
+  if(ohneDatum.length>0) w.push({art:"gelb", text:ohneDatum.length+" Veranstaltung(en) ohne Datum: "+ohneDatum.map(v=>v.titel).join(", ")+"."});
+  return w;
+}
+function warnungenHTML(){
+  const w = warnungen();
+  if(w.length===0) return '<div class="hinweis">Keine Warnungen – Budget im Rahmen, keine Terminkollisionen, alle Veranstaltungen haben Datum und Status.</div>';
+  return w.map(x=>`<div class="${x.art==="rot"?"rotbox":"warnbox"}">${x.text}</div>`).join("");
+}
+
+/* ================= ANSICHTEN ================= */
+let aktuellerTab = "uebersicht";
+function zeigeTab(tab){
+  aktuellerTab = tab;
+  document.querySelectorAll("#hauptnav button").forEach(b=>b.classList.toggle("aktiv", b.dataset.tab===tab));
+  ({uebersicht:zeigeUebersicht, plan:zeigePlan, kalender:zeigeKalender})[tab]();
+  window.scrollTo(0,0);
+}
+
+function budgetFeld(feld, wert){
+  return `<input type="number" class="budgetfeld" step="1000" min="0" value="${wert}" onchange="budgetAendern('${feld}', this.value)"> €`;
+}
+function budgetAendern(feld, wert){
+  daten[feld] = Math.max(0, +wert||0);
+  speichern(); zeigeUebersicht();
+}
+function zeigeUebersicht(){
+  const gb = gesamtBudget(), vp = verplant(), frei = gb - vp;
+  const proStatus = {};
+  STATI.forEach(s=>proStatus[s]={summe:0, anzahl:0});
+  proStatus["ohne"] = {summe:0, anzahl:0};
+  daten.veranstaltungen.forEach(v=>{
+    const k = v.status || "ohne";
+    if(!proStatus[k]) proStatus[k]={summe:0,anzahl:0};
+    proStatus[k].summe += gesamt(v); proStatus[k].anzahl++;
+  });
+  const proSparte = {};
+  SPARTEN.forEach(s=>proSparte[s]={summe:0, anzahl:0});
+  daten.veranstaltungen.filter(zaehltBudget).forEach(v=>{
+    if(!proSparte[v.sparte]) proSparte[v.sparte]={summe:0,anzahl:0};
+    proSparte[v.sparte].summe += gesamt(v); proSparte[v.sparte].anzahl++;
+  });
+  const maxSparte = Math.max(1, ...Object.values(proSparte).map(x=>x.summe));
+  const anzahlAktiv = daten.veranstaltungen.filter(zaehltBudget).length;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Budget-Übersicht Saison 2027/28</h2>
+    <div class="karten">
+      <div class="karte"><div class="wert">${budgetFeld("budget2027", +daten.budget2027||0)}</div><div class="label">Budget Saisonteil 2027 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("budget2028", +daten.budget2028||0)}</div><div class="label">Budget Saisonteil 2028 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("sponsoren", +daten.sponsoren||0)}</div><div class="label">Sponsoreneinnahmen (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("uebertrag", +daten.uebertrag||0)}</div><div class="label">Übertrag aus anderen Bereichen (änderbar)</div></div>
+    </div>
+    <div class="karten">
+      <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison 27/28</div></div>
+      <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant (ohne „abgesagt") · ${anzahlAktiv} Veranstaltungen</div></div>
+      <div class="karte" style="${frei<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert" style="${frei<0?"color:var(--rot)":""}">${euro(frei)}</div><div class="label">${frei<0?"BUDGET ÜBERZOGEN":"Noch freies Budget"}</div></div>
+    </div>
+    <h3>Warnungen</h3>
+    ${warnungenHTML()}
+    <h3>Nach Status</h3>
+    <table><tr><th>Status</th><th>Anzahl</th><th>Summe</th></tr>
+      ${STATI.concat(["ohne"]).filter(s=>proStatus[s] && proStatus[s].anzahl>0).map(s=>`<tr>
+        <td><span class="pille ${s==="ohne"?"sohne":"s"+s}">${s==="ohne"?"ohne Status":s}</span></td>
+        <td>${proStatus[s].anzahl}</td><td>${euro(proStatus[s].summe)}</td></tr>`).join("")}
+    </table>
+    <h3>Nach Sparte (ohne „abgesagt")</h3>
+    ${SPARTEN.filter(s=>proSparte[s].anzahl>0).map(s=>`
+      <div class="balkenzeile"><div class="bname">${s} (${proSparte[s].anzahl})</div>
+      <div class="balken"><div style="width:${Math.round(proSparte[s].summe/maxSparte*100)}%"></div></div>
+      <div class="bwert">${euro(proSparte[s].summe)}</div></div>`).join("")}
+    <p class="fussnote">Budgetfelder direkt anklicken und ändern – alles andere rechnet automatisch. Datenstand wird zentral gespeichert und gilt für das ganze Team.</p>`;
+}
+
+function zeigePlan(filterStatus, filterSparte){
+  const selStatus = filterStatus||"", selSparte = filterSparte||"";
+  let liste = sortiert();
+  if(selStatus==="ohne") liste = liste.filter(v=>!v.status);
+  else if(selStatus) liste = liste.filter(v=>v.status===selStatus);
+  if(selSparte) liste = liste.filter(v=>v.sparte===selSparte);
+  const summe = liste.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0);
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Spielplan 2027/28 – Planung</h2>
+    <div class="leiste">
+      <button class="aktion" onclick="vaDialogOeffnen(null)">+ Neue Veranstaltung</button>
+      <select onchange="zeigePlan(this.value, '${selSparte}')">
+        <option value="">Alle Status</option>
+        ${STATI.map(s=>`<option ${selStatus===s?"selected":""}>${s}</option>`).join("")}
+        <option value="ohne" ${selStatus==="ohne"?"selected":""}>ohne Status</option>
+      </select>
+      <select onchange="zeigePlan('${selStatus}', this.value)">
+        <option value="">Alle Sparten</option>
+        ${SPARTEN.map(s=>`<option ${selSparte===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+      <span class="fussnote">${liste.length} Veranstaltungen · budgetwirksam ${euro(summe)} · Zeile anklicken zum Bearbeiten</span>
+    </div>
+    <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Status</th><th>Gage</th><th>Nebenkosten</th><th>Gesamt</th></tr>
+    ${liste.map(v=>`<tr class="klickbar ${v.status==="abgesagt"?"zAbgesagt":""}" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}</td>
+      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
+      <td><span class="pille ${statusKlasse(v.status)}">${statusText(v.status)}</span></td>
+      <td>${euro(+v.gage||0)}</td><td>${euro(+v.neben||0)}</td><td><b>${euro(gesamt(v))}</b></td></tr>`).join("")}
+    </table>`;
+}
+
+let kalMonat = null;
+function zeigeKalender(){
+  if(!kalMonat){
+    const termine = sortiert().filter(v=>v.datum);
+    const heute = new Date().toISOString().slice(0,10);
+    const naechster = termine.find(v=>v.datum>=heute);
+    kalMonat = (naechster ? naechster.datum : (termine[0]?termine[0].datum:heute)).slice(0,7);
+  }
+  const [J,M] = kalMonat.split("-").map(Number);
+  const monatsname = new Date(J, M-1, 1).toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+  const startWt = (new Date(J, M-1, 1).getDay()+6)%7;
+  const tageImMonat = new Date(J, M, 0).getDate();
+  const heuteIso = new Date().toISOString().slice(0,10);
+  const proTag = {};
+  daten.veranstaltungen.filter(v=>v.datum && v.status!=="abgesagt").forEach(v=>{ (proTag[v.datum]=proTag[v.datum]||[]).push(v); });
+  const zellen = [];
+  for(let i=0;i<startWt;i++) zellen.push('<div class="kaltag kalleer"></div>');
+  for(let t=1;t<=tageImMonat;t++){
+    const iso = kalMonat+"-"+String(t).padStart(2,"0");
+    const heutigen = proTag[iso]||[];
+    let inhalt = `<div class="kalnum">${t}</div>`;
+    heutigen.forEach(v=>{
+      inhalt += `<div class="kalitem ${statusKlasse(v.status)}" onclick="event.stopPropagation();vaDialogOeffnen(${v.vid})">${v.titel}</div>`;
+    });
+    const kollision = heutigen.length>1 ? " kalkollision" : "";
+    zellen.push(`<div class="kaltag${iso===heuteIso?" kalheute":""}${kollision}">${inhalt}</div>`);
+  }
+  const anzahlMonat = daten.veranstaltungen.filter(v=>v.datum && v.datum.slice(0,7)===kalMonat).length;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Saisonkalender</h2>
+    <div class="leiste">
+      <button class="aktion sekundaer klein" onclick="kalNav(-1)">← Vormonat</button>
+      <b style="min-width:170px;text-align:center;font-size:17px">${monatsname}</b>
+      <button class="aktion sekundaer klein" onclick="kalNav(1)">Folgemonat →</button>
+      <button class="aktion sekundaer klein" onclick="kalMonat=null;zeigeKalender()">Zum nächsten Termin</button>
+      <span class="fussnote">${anzahlMonat} Veranstaltung(en) in diesem Monat · Eintrag anklicken zum Bearbeiten</span>
+    </div>
+    <div class="kal">
+      ${["Mo","Di","Mi","Do","Fr","Sa","So"].map(w=>`<div class="kalwt">${w}</div>`).join("")}
+      ${zellen.join("")}
+    </div>
+    <p class="fussnote">Farben nach Status: grün gebucht, magenta optioniert, gelb angefragt, grau Idee. <b>Rot umrandete Tage = mehrere Veranstaltungen am selben Tag.</b> Abgesagte werden nicht angezeigt.</p>`;
+}
+function kalNav(delta){
+  const [J,M] = kalMonat.split("-").map(Number);
+  const d = new Date(J, M-1+delta, 1);
+  kalMonat = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  zeigeKalender();
+}
+
+/* ================= DIALOG ================= */
+function vaDialogOeffnen(vid){
+  const d = document.getElementById("vaDialog");
+  document.getElementById("vdSparte").innerHTML = SPARTEN.map(s=>`<option>${s}</option>`).join("");
+  if(vid!==null && vid!==undefined){
+    const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+    document.getElementById("vdTitel").textContent = "Veranstaltung bearbeiten";
+    document.getElementById("vdId").value = vid;
+    document.getElementById("vdDatum").value = v.datum||"";
+    document.getElementById("vdStatus").value = v.status||"";
+    document.getElementById("vdTitelFeld").value = v.titel||"";
+    document.getElementById("vdSparte").value = v.sparte||"Sonstiges";
+    document.getElementById("vdAgentur").value = v.agentur||"";
+    document.getElementById("vdGage").value = v.gage||0;
+    document.getElementById("vdNeben").value = v.neben||0;
+    document.getElementById("vdAnmerkung").value = v.anmerkung||"";
+    document.getElementById("vdLoeschen").style.display = "";
+  }else{
+    document.getElementById("vdTitel").textContent = "Neue Veranstaltung";
+    document.getElementById("vdId").value = "";
+    document.getElementById("vdDatum").value = "";
+    document.getElementById("vdStatus").value = "Idee";
+    document.getElementById("vdTitelFeld").value = "";
+    document.getElementById("vdSparte").value = "Schauspiel";
+    document.getElementById("vdAgentur").value = "";
+    document.getElementById("vdGage").value = 0;
+    document.getElementById("vdNeben").value = 0;
+    document.getElementById("vdAnmerkung").value = "";
+    document.getElementById("vdLoeschen").style.display = "none";
+  }
+  d.showModal();
+}
+function vaSpeichern(){
+  const idRoh = document.getElementById("vdId").value;
+  const werte = {
+    datum: document.getElementById("vdDatum").value,
+    status: document.getElementById("vdStatus").value,
+    titel: document.getElementById("vdTitelFeld").value,
+    sparte: document.getElementById("vdSparte").value,
+    agentur: document.getElementById("vdAgentur").value,
+    gage: +document.getElementById("vdGage").value||0,
+    neben: +document.getElementById("vdNeben").value||0,
+    anmerkung: document.getElementById("vdAnmerkung").value
+  };
+  if(!werte.titel){ alert("Bitte einen Titel eintragen."); return; }
+  if(idRoh){
+    const v = daten.veranstaltungen.find(x=>x.vid===+idRoh);
+    Object.assign(v, werte);
+  }else{
+    daten.veranstaltungen.push(Object.assign({vid:daten.naechsteVid++}, werte));
+  }
+  speichern();
+  document.getElementById("vaDialog").close();
+  zeigeTab(aktuellerTab);
+}
+function vaLoeschen(){
+  const idRoh = document.getElementById("vdId").value; if(!idRoh) return;
+  if(!confirm("Diese Veranstaltung wirklich löschen? (Tipp: 'abgesagt' behält sie sichtbar in der Liste, zählt aber nicht mehr gegen das Budget.)")) return;
+  daten.veranstaltungen = daten.veranstaltungen.filter(x=>x.vid!==+idRoh);
+  speichern();
+  document.getElementById("vaDialog").close();
+  zeigeTab(aktuellerTab);
+}
+
+zeigeTab("uebersicht");
+initCloud();
+</script>
+</body>
+</html>
