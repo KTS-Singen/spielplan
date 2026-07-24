@@ -6,7 +6,6 @@
 <title>KTS Singen – Spielplan 2027/28</title>
 <style>
   :root{
-    /* KTS Singen Farbwelt: gedämpftes Magenta + Gold (wie Mediaplaner) */
     --akzent:#7e3167; --akzent-hell:#f4eef3; --gruen:#2e7d32; --gruen-hell:#e6f3e6;
     --gelb:#b26a00; --gelb-hell:#fdf3e0; --rot:#b3261e; --rot-hell:#fbeaea;
     --grau:#6e6870; --grau-hell:#ece6eb; --rand:#d9d2dc; --text:#1d1a1e;
@@ -32,6 +31,7 @@
   td{padding:10px;border-top:1px solid var(--rand);font-size:15px;vertical-align:top;}
   tr.klickbar{cursor:pointer;}
   tr.klickbar:hover{background:var(--akzent-hell);}
+  tr.jahrtrenner td{background:var(--text);color:var(--gold);font-weight:700;font-size:14px;letter-spacing:1px;padding:7px 10px;border-top:none;}
   .pille{display:inline-block;padding:3px 10px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;}
   .sgebucht{background:var(--gruen-hell);color:var(--gruen);}
   .soptioniert{background:var(--akzent-hell);color:var(--akzent);}
@@ -46,16 +46,18 @@
   button.aktion:hover{opacity:.9;}
   .leiste{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
   select,input[type=text],input[type=number],input[type=date],textarea{padding:9px;border:1px solid var(--rand);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;}
-  dialog{border:none;border-radius:12px;padding:0;max-width:640px;width:94%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+  dialog{border:none;border-radius:12px;padding:0;max-width:680px;width:94%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
   dialog::backdrop{background:rgba(0,0,0,.35);}
   .dkopf{background:var(--akzent);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
   .dkopf h3{margin:0;font-size:17px;}
   .dkopf button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
-  .dinhalt{padding:18px 20px;}
+  .dinhalt{padding:18px 20px;max-height:78vh;overflow-y:auto;}
   .feld{margin-bottom:12px;}
   .feld label{display:block;font-size:13px;font-weight:600;color:var(--grau);margin-bottom:4px;}
   .feld input,.feld select,.feld textarea{width:100%;}
   .zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .nkraster{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .nkraster .feld label{font-size:12px;}
   .hinweis{background:var(--akzent-hell);border-left:4px solid var(--akzent);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
   .warnbox{background:var(--gelb-hell);border-left:4px solid var(--gelb);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
   .rotbox{background:var(--rot-hell);border-left:4px solid var(--rot);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;font-weight:600;}
@@ -74,6 +76,8 @@
   .balken{flex:1;background:var(--grau-hell);border-radius:6px;height:22px;position:relative;overflow:hidden;}
   .balken > div{height:100%;background:var(--akzent);border-radius:6px;}
   .balkenzeile .bwert{width:130px;font-size:14px;text-align:right;}
+  .plus{color:var(--rot);font-weight:600;}
+  .minus{color:var(--gruen);font-weight:600;}
   @media print{ nav,header .werkzeuge,button.aktion{display:none!important;} body{background:#fff;} }
 </style>
 </head>
@@ -94,6 +98,7 @@
   <button data-tab="uebersicht" class="aktiv" onclick="zeigeTab('uebersicht')">Übersicht</button>
   <button data-tab="plan" onclick="zeigeTab('plan')">Spielplan</button>
   <button data-tab="kalender" onclick="zeigeTab('kalender')">Kalender</button>
+  <button data-tab="auswertung" onclick="zeigeTab('auswertung')">Auswertung</button>
 </nav>
 <main id="inhalt"></main>
 
@@ -113,10 +118,14 @@
       <div class="feld"><label>Sparte</label><select id="vdSparte"></select></div>
       <div class="feld"><label>Agentur / Tournee</label><input type="text" id="vdAgentur"></div>
     </div>
-    <div class="zweispaltig">
-      <div class="feld"><label>Gage (€)</label><input type="number" id="vdGage" min="0" step="100"></div>
-      <div class="feld"><label>Nebenkosten (€)</label><input type="number" id="vdNeben" min="0" step="100"></div>
+    <div class="feld"><label>Gage (€)</label><input type="number" id="vdGage" min="0" step="100"></div>
+    <h3 style="margin:14px 0 8px;">Nebenkosten (€)</h3>
+    <div class="nkraster" id="vdNkRaster"></div>
+    <div class="feld" id="vdNkAltFeld" style="margin-top:8px;">
+      <label>Pauschale, noch unaufgeschlüsselt (€) – bitte nach und nach auf die Arten oben verteilen und hier auf 0 setzen</label>
+      <input type="number" id="vdNkAlt" min="0" step="100">
     </div>
+    <div class="fussnote" id="vdSumme" style="margin-bottom:10px;"></div>
     <div class="feld"><label>Anmerkung</label><input type="text" id="vdAnmerkung"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
       <button class="aktion sekundaer" id="vdLoeschen" onclick="vaLoeschen()">Löschen</button>
@@ -129,32 +138,34 @@
 /* ================= STAMMDATEN ================= */
 const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Kindertheater","Sonstiges"];
 const STATI = ["gebucht","optioniert","angefragt","Idee","abgesagt"];
+const NK_ARTEN = [["tantiemen","Tantiemen"],["transfer","Transfer"],["uebernachtung","Übernachtung"],["catering","Catering"],["gema","Gema"],["sozialkasse","Sozialkasse"],["sonderabgabe","Sonderabgabe"]];
+const nkLeer = () => ({tantiemen:0,transfer:0,uebernachtung:0,catering:0,gema:0,sozialkasse:0,sonderabgabe:0});
 
-/* Vorbefüllt aus KTS_Spielplan_27_28 Planung#3.xlsx */
+/* Vorbefüllt aus KTS_Spielplan_27_28 Planung#3.xlsx – bisherige Nebenkosten als Pauschale (nkAlt) */
 const START_VA = [
- {vid:1, datum:"2027-10-02",titel:"1. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:""},
- {vid:2, datum:"2026-10-15",titel:"Techno Ballet Odessey",sparte:"Musik/Show",agentur:"Berlin Ballet",status:"Idee",gage:25,neben:10000,anmerkung:""},
- {vid:3, datum:"2027-10-21",titel:"Kleine Eheverbrechen",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10000,neben:2500,anmerkung:""},
- {vid:4, datum:"2027-10-28",titel:"Der Sohn",sparte:"Schauspiel",agentur:"Tourerleben",status:"optioniert",gage:9000,neben:2000,anmerkung:""},
- {vid:5, datum:"2027-11-27",titel:"Fitzek",sparte:"Schauspiel",agentur:"Showslot",status:"gebucht",gage:25000,neben:10000,anmerkung:""},
- {vid:6, datum:"2027-11-27",titel:"1. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:"gleicher Tag wie Fitzek – Überschneidung prüfen"},
- {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,neben:0,anmerkung:""},
- {vid:8, datum:"2027-12-06",titel:"Der gestiefelte Kater",sparte:"Kindertheater",agentur:"Horizont",status:"optioniert",gage:9000,neben:2000,anmerkung:"2. Vorstellung am 07.12.2027"},
- {vid:9, datum:"2027-12-11",titel:"Weihnachten in Prag",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:8500,neben:2000,anmerkung:""},
- {vid:10,datum:"2027-12-12",titel:"xxx",sparte:"Sonstiges",agentur:"xxx",status:"",gage:0,neben:0,anmerkung:""},
- {vid:11,datum:"2028-01-08",titel:"Neujahrskonzert / Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:"Altliste: '3. Symphoniekonzert' – Nummerierung prüfen"},
- {vid:12,datum:"2028-01-15",titel:"Die lustigen Weiber von Windsor",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,neben:0,anmerkung:""},
- {vid:13,datum:"2028-01-20",titel:"Brodas",sparte:"Musik/Show",agentur:"Landgraf",status:"optioniert",gage:11000,neben:3000,anmerkung:"lt. Altliste: fragwürdig wg. anderer Städte"},
- {vid:14,datum:"2028-02-09",titel:"Der Videobeweis",sparte:"Schauspiel",agentur:"Berlin",status:"optioniert",gage:9000,neben:2000,anmerkung:""},
- {vid:15,datum:"2028-02-12",titel:"2. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:""},
- {vid:16,datum:"2028-02-14",titel:"Meister Eder (Pumuckl)",sparte:"Kindertheater",agentur:"Cocomico",status:"optioniert",gage:8000,neben:0,anmerkung:"2. Vorstellung Dienstag?"},
- {vid:17,datum:"2028-03-09",titel:"Kardinalfehler",sparte:"Schauspiel",agentur:"Landgraf",status:"optioniert",gage:9000,neben:1500,anmerkung:""},
- {vid:18,datum:"2028-03-17",titel:"53 Sonntage",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10100,neben:1900,anmerkung:"Altliste: Betrag 10.100 € notiert – prüfen"},
- {vid:19,datum:"2028-03-18",titel:"3. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,neben:2000,anmerkung:""},
- {vid:20,datum:"2028-04-01",titel:"3. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,neben:1000,anmerkung:"Nummerierung prüfen (s. 08.01.2028)"},
- {vid:21,datum:"2028-04-07",titel:"Alle 7 Wellen",sparte:"Komödie",agentur:"Hamburger Kammerspiele",status:"optioniert",gage:6500,neben:2500,anmerkung:""},
- {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"umbreit",status:"",gage:0,neben:0,anmerkung:""},
- {vid:23,datum:"2028-05-06",titel:"Die Große Zeit",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:15000,neben:6000,anmerkung:""}
+ {vid:1, datum:"2027-10-02",titel:"1. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:""},
+ {vid:2, datum:"2026-10-15",titel:"Techno Ballet Odessey",sparte:"Musik/Show",agentur:"Berlin Ballet",status:"Idee",gage:25,nk:nkLeer(),nkAlt:10000,anmerkung:""},
+ {vid:3, datum:"2027-10-21",titel:"Kleine Eheverbrechen",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:2500,anmerkung:""},
+ {vid:4, datum:"2027-10-28",titel:"Der Sohn",sparte:"Schauspiel",agentur:"Tourerleben",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:5, datum:"2027-11-27",titel:"Fitzek",sparte:"Schauspiel",agentur:"Showslot",status:"gebucht",gage:25000,nk:nkLeer(),nkAlt:10000,anmerkung:""},
+ {vid:6, datum:"2027-11-27",titel:"1. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:"gleicher Tag wie Fitzek – Überschneidung prüfen"},
+ {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:8, datum:"2027-12-06",titel:"Der gestiefelte Kater",sparte:"Kindertheater",agentur:"Horizont",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:"2. Vorstellung am 07.12.2027"},
+ {vid:9, datum:"2027-12-11",titel:"Weihnachten in Prag",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:8500,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:10,datum:"2027-12-12",titel:"xxx",sparte:"Sonstiges",agentur:"xxx",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:11,datum:"2028-01-08",titel:"Neujahrskonzert / Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Altliste: '3. Symphoniekonzert' – Nummerierung prüfen"},
+ {vid:12,datum:"2028-01-15",titel:"Die lustigen Weiber von Windsor",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:13,datum:"2028-01-20",titel:"Brodas",sparte:"Musik/Show",agentur:"Landgraf",status:"optioniert",gage:11000,nk:nkLeer(),nkAlt:3000,anmerkung:"lt. Altliste: fragwürdig wg. anderer Städte"},
+ {vid:14,datum:"2028-02-09",titel:"Der Videobeweis",sparte:"Schauspiel",agentur:"Berlin",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:15,datum:"2028-02-12",titel:"2. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:16,datum:"2028-02-14",titel:"Meister Eder (Pumuckl)",sparte:"Kindertheater",agentur:"Cocomico",status:"optioniert",gage:8000,nk:nkLeer(),nkAlt:0,anmerkung:"2. Vorstellung Dienstag?"},
+ {vid:17,datum:"2028-03-09",titel:"Kardinalfehler",sparte:"Schauspiel",agentur:"Landgraf",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:1500,anmerkung:""},
+ {vid:18,datum:"2028-03-17",titel:"53 Sonntage",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10100,nk:nkLeer(),nkAlt:1900,anmerkung:"Altliste: Betrag 10.100 € notiert – prüfen"},
+ {vid:19,datum:"2028-03-18",titel:"3. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:20,datum:"2028-04-01",titel:"3. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Nummerierung prüfen (s. 08.01.2028)"},
+ {vid:21,datum:"2028-04-07",titel:"Alle 7 Wellen",sparte:"Komödie",agentur:"Hamburger Kammerspiele",status:"optioniert",gage:6500,nk:nkLeer(),nkAlt:2500,anmerkung:""},
+ {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"umbreit",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:23,datum:"2028-05-06",titel:"Die Große Zeit",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:15000,nk:nkLeer(),nkAlt:6000,anmerkung:""}
 ];
 
 /* ================= ZENTRALE SPEICHERUNG (Supabase) ================= */
@@ -171,7 +182,8 @@ let syncTimer = null, syncLaeuft = false;
 let daten = ladeLokal();
 function frischeDaten(){
   return { veranstaltungen: JSON.parse(JSON.stringify(START_VA)),
-    budget2027: 90000, budget2028: 100000, sponsoren: 5000, uebertrag: 38000, naechsteVid: 24 };
+    budgetJahr1: 90000, budgetJahr2: 100000, sponsoren: 5000, uebertrag: 38000,
+    saisonAktuell: "2027/28", saisons: {}, naechsteVid: 24 };
 }
 function ladeLokal(){
   let roh = null;
@@ -189,11 +201,21 @@ function ladeLokal(){
   return frischeDaten();
 }
 function migriere(){
+  /* läuft nach jedem Laden – lokal wie vom Server (deckt auch die Vorgänger-Version ab) */
   if(!daten.veranstaltungen) daten.veranstaltungen = [];
-  if(daten.budget2027===undefined) daten.budget2027 = 90000;
-  if(daten.budget2028===undefined) daten.budget2028 = 100000;
+  if(daten.budgetJahr1===undefined) daten.budgetJahr1 = (daten.budget2027!==undefined ? +daten.budget2027 : 90000);
+  if(daten.budgetJahr2===undefined) daten.budgetJahr2 = (daten.budget2028!==undefined ? +daten.budget2028 : 100000);
+  delete daten.budget2027; delete daten.budget2028;
   if(daten.sponsoren===undefined) daten.sponsoren = 5000;
   if(daten.uebertrag===undefined) daten.uebertrag = 38000;
+  if(!daten.saisonAktuell) daten.saisonAktuell = "2027/28";
+  if(!daten.saisons) daten.saisons = {};
+  daten.veranstaltungen.forEach(v=>{
+    if(!v.nk) v.nk = nkLeer();
+    NK_ARTEN.forEach(([k])=>{ if(v.nk[k]===undefined) v.nk[k]=0; });
+    if(v.neben!==undefined){ v.nkAlt = (+v.neben||0) + (+v.nkAlt||0); delete v.neben; }
+    if(v.nkAlt===undefined) v.nkAlt = 0;
+  });
   if(!daten.naechsteVid) daten.naechsteVid = daten.veranstaltungen.reduce((m,v)=>Math.max(m, v.vid||0), 0) + 1;
 }
 migriere();
@@ -313,7 +335,6 @@ async function sbFetch(pfad, opt){
   }
   return r;
 }
-
 async function initCloud(){
   if(!cloudAktiv()){ syncStatus("nur lokal – kein Server eingetragen","grau"); return; }
   if(!authSession()){ loginZeigen(); return; }
@@ -384,7 +405,12 @@ async function pollServer(){
 function neuZeichnen(){
   const dlg = document.getElementById("vaDialog");
   if(dlg && dlg.open) return;
+  kopfzeile();
   zeigeTab(aktuellerTab);
+}
+function kopfzeile(){
+  const kopf = document.querySelector("header .saison");
+  if(kopf) kopf.textContent = "Saison " + daten.saisonAktuell + " · Programmplanung";
 }
 function syncStatus(text, farbe){
   const el = document.getElementById("syncStatus"); if(!el) return;
@@ -409,7 +435,7 @@ function konfliktServerNehmen(){
   daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
   const b = document.getElementById("konfliktBanner"); if(b) b.remove();
   const dlg = document.getElementById("vaDialog"); if(dlg && dlg.open) dlg.close();
-  zeigeTab(aktuellerTab);
+  kopfzeile(); zeigeTab(aktuellerTab);
   syncStatus("synchron ✓","gruen");
 }
 async function konfliktMeinsErzwingen(){
@@ -429,22 +455,22 @@ function datenExport(){
 function datenImport(inp){
   const f = inp.files[0]; if(!f) return;
   const r = new FileReader();
-  r.onload = () => { try{ daten = JSON.parse(r.result); migriere(); speichern(); zeigeTab(aktuellerTab); alert("Daten geladen."); }catch(e){ alert("Datei konnte nicht gelesen werden."); } };
+  r.onload = () => { try{ daten = JSON.parse(r.result); migriere(); speichern(); kopfzeile(); zeigeTab(aktuellerTab); alert("Daten geladen."); }catch(e){ alert("Datei konnte nicht gelesen werden."); } };
   r.readAsText(f);
 }
 
 /* ================= HILFEN ================= */
 const euro = n => (Math.round(n)).toLocaleString("de-DE") + " €";
 const datumDE = iso => { if(!iso) return "–"; const [j,m,t] = iso.split("-"); return t+"."+m+"."+j; };
-const gesamt = v => (+v.gage||0) + (+v.neben||0);
+const nkSumme = v => NK_ARTEN.reduce((a,[k])=>a+(+v.nk[k]||0),0) + (+v.nkAlt||0);
+const gesamt = v => (+v.gage||0) + nkSumme(v);
 const zaehltBudget = v => v.status !== "abgesagt";
-function gesamtBudget(){ return (+daten.budget2027||0)+(+daten.budget2028||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
+function gesamtBudget(){ return (+daten.budgetJahr1||0)+(+daten.budgetJahr2||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
 function verplant(){ return daten.veranstaltungen.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0); }
 function statusKlasse(s){ return s ? "s"+s : "sohne"; }
 function statusText(s){ return s || "ohne Status"; }
 function sortiert(){ return daten.veranstaltungen.slice().sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")); }
 
-/* Warnungen: Budget, Terminkollisionen, fehlender Status, fehlendes Datum */
 function warnungen(){
   const w = [];
   const frei = gesamtBudget() - verplant();
@@ -458,11 +484,13 @@ function warnungen(){
   if(ohneStatus.length>0) w.push({art:"gelb", text:ohneStatus.length+" Veranstaltung(en) ohne Status: "+ohneStatus.map(v=>v.titel).join(", ")+"."});
   const ohneDatum = daten.veranstaltungen.filter(v=>!v.datum);
   if(ohneDatum.length>0) w.push({art:"gelb", text:ohneDatum.length+" Veranstaltung(en) ohne Datum: "+ohneDatum.map(v=>v.titel).join(", ")+"."});
+  const pauschal = daten.veranstaltungen.filter(v=>(+v.nkAlt||0)>0);
+  if(pauschal.length>0) w.push({art:"gelb", text:pauschal.length+" Veranstaltung(en) mit unaufgeschlüsselter Nebenkosten-Pauschale – nach und nach auf Tantiemen, Transfer usw. verteilen."});
   return w;
 }
 function warnungenHTML(){
   const w = warnungen();
-  if(w.length===0) return '<div class="hinweis">Keine Warnungen – Budget im Rahmen, keine Terminkollisionen, alle Veranstaltungen haben Datum und Status.</div>';
+  if(w.length===0) return '<div class="hinweis">Keine Warnungen – Budget im Rahmen, keine Terminkollisionen, alle Angaben vollständig.</div>';
   return w.map(x=>`<div class="${x.art==="rot"?"rotbox":"warnbox"}">${x.text}</div>`).join("");
 }
 
@@ -471,10 +499,9 @@ let aktuellerTab = "uebersicht";
 function zeigeTab(tab){
   aktuellerTab = tab;
   document.querySelectorAll("#hauptnav button").forEach(b=>b.classList.toggle("aktiv", b.dataset.tab===tab));
-  ({uebersicht:zeigeUebersicht, plan:zeigePlan, kalender:zeigeKalender})[tab]();
+  ({uebersicht:zeigeUebersicht, plan:zeigePlan, kalender:zeigeKalender, auswertung:zeigeAuswertung})[tab]();
   window.scrollTo(0,0);
 }
-
 function budgetFeld(feld, wert){
   return `<input type="number" class="budgetfeld" step="1000" min="0" value="${wert}" onchange="budgetAendern('${feld}', this.value)"> €`;
 }
@@ -499,17 +526,25 @@ function zeigeUebersicht(){
     proSparte[v.sparte].summe += gesamt(v); proSparte[v.sparte].anzahl++;
   });
   const maxSparte = Math.max(1, ...Object.values(proSparte).map(x=>x.summe));
+  const nkArten = {};
+  NK_ARTEN.forEach(([k,l])=>nkArten[k]=0);
+  let nkPauschal = 0;
+  daten.veranstaltungen.filter(zaehltBudget).forEach(v=>{
+    NK_ARTEN.forEach(([k])=>{ nkArten[k] += (+v.nk[k]||0); });
+    nkPauschal += (+v.nkAlt||0);
+  });
+  const maxNk = Math.max(1, ...Object.values(nkArten), nkPauschal);
   const anzahlAktiv = daten.veranstaltungen.filter(zaehltBudget).length;
   document.getElementById("inhalt").innerHTML = `
-    <h2>Budget-Übersicht Saison 2027/28</h2>
+    <h2>Budget-Übersicht Saison ${daten.saisonAktuell}</h2>
     <div class="karten">
-      <div class="karte"><div class="wert">${budgetFeld("budget2027", +daten.budget2027||0)}</div><div class="label">Budget Saisonteil 2027 (änderbar)</div></div>
-      <div class="karte"><div class="wert">${budgetFeld("budget2028", +daten.budget2028||0)}</div><div class="label">Budget Saisonteil 2028 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("budgetJahr1", +daten.budgetJahr1||0)}</div><div class="label">Budget 2026 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("budgetJahr2", +daten.budgetJahr2||0)}</div><div class="label">Budget 2027 (änderbar)</div></div>
       <div class="karte"><div class="wert">${budgetFeld("sponsoren", +daten.sponsoren||0)}</div><div class="label">Sponsoreneinnahmen (änderbar)</div></div>
       <div class="karte"><div class="wert">${budgetFeld("uebertrag", +daten.uebertrag||0)}</div><div class="label">Übertrag aus anderen Bereichen (änderbar)</div></div>
     </div>
     <div class="karten">
-      <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison 27/28</div></div>
+      <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison ${daten.saisonAktuell}</div></div>
       <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant (ohne „abgesagt") · ${anzahlAktiv} Veranstaltungen</div></div>
       <div class="karte" style="${frei<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert" style="${frei<0?"color:var(--rot)":""}">${euro(frei)}</div><div class="label">${frei<0?"BUDGET ÜBERZOGEN":"Noch freies Budget"}</div></div>
     </div>
@@ -526,6 +561,14 @@ function zeigeUebersicht(){
       <div class="balkenzeile"><div class="bname">${s} (${proSparte[s].anzahl})</div>
       <div class="balken"><div style="width:${Math.round(proSparte[s].summe/maxSparte*100)}%"></div></div>
       <div class="bwert">${euro(proSparte[s].summe)}</div></div>`).join("")}
+    <h3>Nebenkosten nach Art (ohne „abgesagt")</h3>
+    ${NK_ARTEN.map(([k,l])=>`
+      <div class="balkenzeile"><div class="bname">${l}</div>
+      <div class="balken"><div style="width:${Math.round(nkArten[k]/maxNk*100)}%"></div></div>
+      <div class="bwert">${euro(nkArten[k])}</div></div>`).join("")}
+    ${nkPauschal>0?`<div class="balkenzeile"><div class="bname" style="color:var(--gelb)">Pauschale (alt)</div>
+      <div class="balken"><div style="width:${Math.round(nkPauschal/maxNk*100)}%;background:var(--gelb)"></div></div>
+      <div class="bwert">${euro(nkPauschal)}</div></div>`:""}
     <p class="fussnote">Budgetfelder direkt anklicken und ändern – alles andere rechnet automatisch. Datenstand wird zentral gespeichert und gilt für das ganze Team.</p>`;
 }
 
@@ -536,8 +579,24 @@ function zeigePlan(filterStatus, filterSparte){
   else if(selStatus) liste = liste.filter(v=>v.status===selStatus);
   if(selSparte) liste = liste.filter(v=>v.sparte===selSparte);
   const summe = liste.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0);
+  let zeilen = "", letztesJahr = null;
+  liste.forEach(v=>{
+    const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
+    if(jahr !== letztesJahr){
+      zeilen += `<tr class="jahrtrenner"><td colspan="8">▸ ${jahr==="ohne Datum"?"OHNE DATUM":jahr}</td></tr>`;
+      letztesJahr = jahr;
+    }
+    zeilen += `<tr class="klickbar ${v.status==="abgesagt"?"zAbgesagt":""}" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}</td>
+      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
+      <td><span class="pille ${statusKlasse(v.status)}">${statusText(v.status)}</span></td>
+      <td>${euro(+v.gage||0)}</td>
+      <td>${euro(nkSumme(v))}${(+v.nkAlt||0)>0?'<div class="fussnote">davon Pauschale: '+euro(+v.nkAlt)+'</div>':""}</td>
+      <td><b>${euro(gesamt(v))}</b></td></tr>`;
+  });
   document.getElementById("inhalt").innerHTML = `
-    <h2>Spielplan 2027/28 – Planung</h2>
+    <h2>Spielplan ${daten.saisonAktuell} – Planung</h2>
     <div class="leiste">
       <button class="aktion" onclick="vaDialogOeffnen(null)">+ Neue Veranstaltung</button>
       <select onchange="zeigePlan(this.value, '${selSparte}')">
@@ -552,12 +611,7 @@ function zeigePlan(filterStatus, filterSparte){
       <span class="fussnote">${liste.length} Veranstaltungen · budgetwirksam ${euro(summe)} · Zeile anklicken zum Bearbeiten</span>
     </div>
     <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Status</th><th>Gage</th><th>Nebenkosten</th><th>Gesamt</th></tr>
-    ${liste.map(v=>`<tr class="klickbar ${v.status==="abgesagt"?"zAbgesagt":""}" onclick="vaDialogOeffnen(${v.vid})">
-      <td>${datumDE(v.datum)}</td>
-      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
-      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
-      <td><span class="pille ${statusKlasse(v.status)}">${statusText(v.status)}</span></td>
-      <td>${euro(+v.gage||0)}</td><td>${euro(+v.neben||0)}</td><td><b>${euro(gesamt(v))}</b></td></tr>`).join("")}
+    ${zeilen}
     </table>`;
 }
 
@@ -611,12 +665,123 @@ function kalNav(delta){
   zeigeKalender();
 }
 
+/* ================= AUSWERTUNG (Saisonvergleich) ================= */
+function kennzahlen(vas){
+  const aktiv = vas.filter(zaehltBudget);
+  const k = { anzahl: aktiv.length, gage: 0, nk: 0, nkArten: {}, gesamt: 0, sparten: {} };
+  NK_ARTEN.forEach(([key])=>k.nkArten[key]=0);
+  k.nkArten["pauschale"]=0;
+  aktiv.forEach(v=>{
+    k.gage += (+v.gage||0);
+    NK_ARTEN.forEach(([key])=>{ k.nkArten[key] += (+v.nk[key]||0); });
+    k.nkArten["pauschale"] += (+v.nkAlt||0);
+    k.nk += nkSumme(v);
+    k.gesamt += gesamt(v);
+    if(!k.sparten[v.sparte]) k.sparten[v.sparte]={anzahl:0,summe:0};
+    k.sparten[v.sparte].anzahl++; k.sparten[v.sparte].summe += gesamt(v);
+  });
+  k.oGage = k.anzahl>0 ? k.gage/k.anzahl : 0;
+  k.oGesamt = k.anzahl>0 ? k.gesamt/k.anzahl : 0;
+  return k;
+}
+function deltaZelle(alt, neu, istGeld){
+  if(alt===0 && neu===0) return "<td>–</td><td>–</td>";
+  const d = neu - alt;
+  const proz = alt>0 ? (d/alt*100) : null;
+  const kl = d>0 ? "plus" : (d<0 ? "minus" : "");
+  const wert = istGeld===false ? (d>0?"+":"")+Math.round(d) : (d>0?"+":"")+Math.round(d).toLocaleString("de-DE")+" €";
+  return `<td class="${kl}">${wert}</td><td class="${kl}">${proz===null?"neu":(proz>0?"+":"")+proz.toFixed(1).replace(".",",")+" %"}</td>`;
+}
+let vglSaison = "";
+function zeigeAuswertung(){
+  const archivNamen = Object.keys(daten.saisons||{}).sort();
+  if(!vglSaison || !daten.saisons[vglSaison]) vglSaison = archivNamen[archivNamen.length-1] || "";
+  const aktuell = kennzahlen(daten.veranstaltungen);
+  let vergleichHTML = "";
+  if(vglSaison && daten.saisons[vglSaison]){
+    const archiv = daten.saisons[vglSaison];
+    const alt = kennzahlen(archiv.veranstaltungen||[]);
+    const zeile = (name, a, n, istGeld) => `<tr><td>${name}</td>
+      <td>${istGeld===false?Math.round(a):euro(a)}</td>
+      <td>${istGeld===false?Math.round(n):euro(n)}</td>
+      ${deltaZelle(a, n, istGeld)}</tr>`;
+    const alleSparten = Array.from(new Set(Object.keys(alt.sparten).concat(Object.keys(aktuell.sparten))));
+    vergleichHTML = `
+      <table><tr><th>Kennzahl</th><th>Saison ${vglSaison}</th><th>Saison ${daten.saisonAktuell} (aktuell)</th><th>Δ absolut</th><th>Δ %</th></tr>
+        ${zeile("Veranstaltungen (ohne abgesagt)", alt.anzahl, aktuell.anzahl, false)}
+        ${zeile("Gagen gesamt", alt.gage, aktuell.gage)}
+        ${zeile("Ø Gage je Veranstaltung", alt.oGage, aktuell.oGage)}
+        ${zeile("Nebenkosten gesamt", alt.nk, aktuell.nk)}
+        ${NK_ARTEN.map(([k,l])=>zeile("· "+l, alt.nkArten[k], aktuell.nkArten[k])).join("")}
+        ${ (alt.nkArten.pauschale>0||aktuell.nkArten.pauschale>0) ? zeile("· Pauschale (unaufgeschlüsselt)", alt.nkArten.pauschale, aktuell.nkArten.pauschale) : ""}
+        ${zeile("Gesamtkosten", alt.gesamt, aktuell.gesamt)}
+        ${zeile("Ø Kosten je Veranstaltung", alt.oGesamt, aktuell.oGesamt)}
+      </table>
+      <h3>Je Sparte (Gesamtkosten)</h3>
+      <table><tr><th>Sparte</th><th>Saison ${vglSaison}</th><th>Saison ${daten.saisonAktuell}</th><th>Δ absolut</th><th>Δ %</th></tr>
+        ${alleSparten.map(s=>{
+          const a = alt.sparten[s]||{summe:0,anzahl:0}, n = aktuell.sparten[s]||{summe:0,anzahl:0};
+          return `<tr><td>${s} <span class="fussnote">(${a.anzahl} → ${n.anzahl})</span></td>
+            <td>${euro(a.summe)}</td><td>${euro(n.summe)}</td>${deltaZelle(a.summe, n.summe)}</tr>`;
+        }).join("")}
+      </table>
+      <p class="fussnote">Rot = teurer geworden, grün = günstiger. Ø-Werte gleichen unterschiedliche Veranstaltungszahlen aus – für Preisentwicklung sind sie die verlässlichere Größe.</p>`;
+  } else {
+    vergleichHTML = `<div class="hinweis"><b>Noch keine Vergleichssaison archiviert.</b> So funktioniert der Kreislauf:
+      Am Ende der Saison unten auf „Saison abschließen &amp; neue beginnen" klicken – der komplette Stand wird eingefroren,
+      der Spielplan geleert und die neue Saison beginnt. Ab dann vergleicht diese Seite automatisch die laufende Planung
+      mit den archivierten Vorjahren: Gagen, jede Nebenkosten-Art, Kosten je Sparte – inklusive prozentualer Preisentwicklung.</div>`;
+  }
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Auswertung – Preisentwicklung über die Saisons</h2>
+    <div class="leiste">
+      <label class="fussnote">Vergleichssaison:</label>
+      <select onchange="vglSaison=this.value;zeigeAuswertung()" ${archivNamen.length===0?"disabled":""}>
+        ${archivNamen.length===0?'<option>– noch keine archiviert –</option>':archivNamen.map(n=>`<option ${vglSaison===n?"selected":""}>${n}</option>`).join("")}
+      </select>
+      <span style="flex:1"></span>
+      <button class="aktion sekundaer" onclick="saisonAbschliessen()">Saison abschließen &amp; neue beginnen</button>
+    </div>
+    ${vergleichHTML}
+    <h3>Aktuelle Saison ${daten.saisonAktuell} in Zahlen</h3>
+    <div class="karten">
+      <div class="karte"><div class="wert">${aktuell.anzahl}</div><div class="label">Veranstaltungen (ohne abgesagt)</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.gage)}</div><div class="label">Gagen gesamt · Ø ${euro(aktuell.oGage)}</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.nk)}</div><div class="label">Nebenkosten gesamt</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.gesamt)}</div><div class="label">Gesamtkosten · Ø ${euro(aktuell.oGesamt)}</div></div>
+    </div>`;
+}
+function naechsteSaison(name){
+  const m = String(name).match(/^(\d{4})\/(\d{2})$/);
+  if(!m) return name + " +1";
+  const j = +m[1] + 1;
+  return j + "/" + String((+m[2]+1) % 100).padStart(2,"0");
+}
+function saisonAbschliessen(){
+  const name = daten.saisonAktuell;
+  if(daten.saisons[name] && !confirm("Für "+name+" existiert schon ein Archiv – überschreiben?")) return;
+  if(!confirm("Saison "+name+" abschließen?\n\nDer komplette Stand ("+daten.veranstaltungen.length+" Veranstaltungen) wird archiviert, der Spielplan geleert und die Saison "+naechsteSaison(name)+" beginnt. Die Budgetfelder bleiben als Ausgangswerte stehen.")) return;
+  daten.saisons[name] = {
+    veranstaltungen: JSON.parse(JSON.stringify(daten.veranstaltungen)),
+    budgetJahr1: daten.budgetJahr1, budgetJahr2: daten.budgetJahr2,
+    sponsoren: daten.sponsoren, uebertrag: daten.uebertrag,
+    abgeschlossen: new Date().toISOString().slice(0,10)
+  };
+  daten.veranstaltungen = [];
+  daten.saisonAktuell = naechsteSaison(name);
+  vglSaison = name;
+  speichern(); kopfzeile(); zeigeAuswertung();
+}
+
 /* ================= DIALOG ================= */
 function vaDialogOeffnen(vid){
   const d = document.getElementById("vaDialog");
   document.getElementById("vdSparte").innerHTML = SPARTEN.map(s=>`<option>${s}</option>`).join("");
+  document.getElementById("vdNkRaster").innerHTML = NK_ARTEN.map(([k,l])=>
+    `<div class="feld"><label>${l}</label><input type="number" id="vdNk_${k}" min="0" step="50" oninput="vdSummeAktualisieren()"></div>`).join("");
+  let v = null;
   if(vid!==null && vid!==undefined){
-    const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+    v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
     document.getElementById("vdTitel").textContent = "Veranstaltung bearbeiten";
     document.getElementById("vdId").value = vid;
     document.getElementById("vdDatum").value = v.datum||"";
@@ -625,7 +790,8 @@ function vaDialogOeffnen(vid){
     document.getElementById("vdSparte").value = v.sparte||"Sonstiges";
     document.getElementById("vdAgentur").value = v.agentur||"";
     document.getElementById("vdGage").value = v.gage||0;
-    document.getElementById("vdNeben").value = v.neben||0;
+    NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = v.nk[k]||0; });
+    document.getElementById("vdNkAlt").value = v.nkAlt||0;
     document.getElementById("vdAnmerkung").value = v.anmerkung||"";
     document.getElementById("vdLoeschen").style.display = "";
   }else{
@@ -637,14 +803,27 @@ function vaDialogOeffnen(vid){
     document.getElementById("vdSparte").value = "Schauspiel";
     document.getElementById("vdAgentur").value = "";
     document.getElementById("vdGage").value = 0;
-    document.getElementById("vdNeben").value = 0;
+    NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = 0; });
+    document.getElementById("vdNkAlt").value = 0;
     document.getElementById("vdAnmerkung").value = "";
     document.getElementById("vdLoeschen").style.display = "none";
   }
+  document.getElementById("vdNkAltFeld").style.display = (v && (+v.nkAlt||0)>0) ? "" : "none";
+  document.getElementById("vdGage").oninput = vdSummeAktualisieren;
+  document.getElementById("vdNkAlt").oninput = vdSummeAktualisieren;
+  vdSummeAktualisieren();
   d.showModal();
+}
+function vdSummeAktualisieren(){
+  const gage = +document.getElementById("vdGage").value||0;
+  let nk = +document.getElementById("vdNkAlt").value||0;
+  NK_ARTEN.forEach(([k])=>{ nk += +document.getElementById("vdNk_"+k).value||0; });
+  document.getElementById("vdSumme").innerHTML = "Nebenkosten: <b>"+euro(nk)+"</b> · Gesamt (Gage + Nebenkosten): <b>"+euro(gage+nk)+"</b>";
 }
 function vaSpeichern(){
   const idRoh = document.getElementById("vdId").value;
+  const nk = {};
+  NK_ARTEN.forEach(([k])=>{ nk[k] = +document.getElementById("vdNk_"+k).value||0; });
   const werte = {
     datum: document.getElementById("vdDatum").value,
     status: document.getElementById("vdStatus").value,
@@ -652,7 +831,8 @@ function vaSpeichern(){
     sparte: document.getElementById("vdSparte").value,
     agentur: document.getElementById("vdAgentur").value,
     gage: +document.getElementById("vdGage").value||0,
-    neben: +document.getElementById("vdNeben").value||0,
+    nk: nk,
+    nkAlt: +document.getElementById("vdNkAlt").value||0,
     anmerkung: document.getElementById("vdAnmerkung").value
   };
   if(!werte.titel){ alert("Bitte einen Titel eintragen."); return; }
@@ -675,6 +855,7 @@ function vaLoeschen(){
   zeigeTab(aktuellerTab);
 }
 
+kopfzeile();
 zeigeTab("uebersicht");
 initCloud();
 </script>
