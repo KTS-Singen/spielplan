@@ -157,17 +157,14 @@ const nkLeer = () => ({tantiemen:0,transfer:0,uebernachtung:0,catering:0,gema:0,
 /* Vorbefüllt aus KTS_Spielplan_27_28 Planung#3.xlsx – bisherige Nebenkosten als Pauschale (nkAlt) */
 const START_VA = [
  {vid:1, datum:"2027-10-02",titel:"1. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:""},
- {vid:2, datum:"2026-10-15",titel:"Techno Ballet Odessey",sparte:"Musik/Show",agentur:"Berlin Ballet",status:"Idee",gage:25000,nk:nkLeer(),nkAlt:10000,anmerkung:"Datum prüfen (steht auf 2026)"},
  {vid:3, datum:"2027-10-21",titel:"Kleine Eheverbrechen",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:2500,anmerkung:""},
  {vid:4, datum:"2027-10-28",titel:"Der Sohn",sparte:"Schauspiel",agentur:"Tourerleben",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
  {vid:5, datum:"2027-11-27",titel:"Fitzek",sparte:"Schauspiel",agentur:"Showslot",status:"gebucht",gage:25000,nk:nkLeer(),nkAlt:10000,anmerkung:""},
  {vid:6, datum:"2027-11-27",titel:"1. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:"gleicher Tag wie Fitzek – Überschneidung prüfen"},
- {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"Idee",gage:9000,nk:nkLeer(),nkAlt:4000,anmerkung:""},
  {vid:8, datum:"2027-12-06",titel:"Der gestiefelte Kater",sparte:"Kindertheater",agentur:"Horizont",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:"2. Vorstellung am 07.12.2027"},
  {vid:9, datum:"2027-12-11",titel:"Weihnachten in Prag",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:8500,nk:nkLeer(),nkAlt:2000,anmerkung:""},
- {vid:10,datum:"2027-12-12",titel:"xxx",sparte:"Sonstiges",agentur:"xxx",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
  {vid:11,datum:"2028-01-08",titel:"Neujahrskonzert / Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Altliste: '3. Symphoniekonzert' – Nummerierung prüfen"},
- {vid:12,datum:"2028-01-15",titel:"Die lustigen Weiber von Windsor",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
  {vid:13,datum:"2028-01-20",titel:"Brodas",sparte:"Musik/Show",agentur:"Landgraf",status:"optioniert",gage:11000,nk:nkLeer(),nkAlt:3000,anmerkung:"lt. Altliste: fragwürdig wg. anderer Städte"},
  {vid:14,datum:"2028-02-09",titel:"Der Videobeweis",sparte:"Schauspiel",agentur:"Berlin",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
  {vid:15,datum:"2028-02-12",titel:"2. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
@@ -177,7 +174,7 @@ const START_VA = [
  {vid:19,datum:"2028-03-18",titel:"3. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
  {vid:20,datum:"2028-04-01",titel:"3. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Nummerierung prüfen (s. 08.01.2028)"},
  {vid:21,datum:"2028-04-07",titel:"Alle 7 Wellen",sparte:"Komödie",agentur:"Hamburger Kammerspiele",status:"optioniert",gage:6500,nk:nkLeer(),nkAlt:2500,anmerkung:""},
- {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"umbreit",status:"",gage:0,nk:nkLeer(),nkAlt:0,anmerkung:""},
+ {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"Umbreit",status:"Idee",gage:9000,nk:nkLeer(),nkAlt:4000,anmerkung:""},
  {vid:23,datum:"2028-05-06",titel:"Die Große Zeit",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:15000,nk:nkLeer(),nkAlt:6000,anmerkung:""}
 ];
 
@@ -795,8 +792,6 @@ function saisonAbschliessen(){
 const ANALYSE_VORGABEN = {
  1:{score:63,prio:"B",rolle:"BASIS",sv:false,preise:[42,36,29,19],plaetze:847,auslastung:58,faktor:0.70,
    text:"Saisonauftakt für das Abo-Publikum, 25/26 kamen 525 Besucher. Zielgruppe 60+, Einzug Singen/Hegau. Kein Presse-, kein Neukundenpotenzial – aber verlässliche Ringversorgung. Preise leicht über Ist (K1 42 statt 40) sind durchsetzbar, der Rahmen gäbe bis 52 her. Empfehlung: buchen, als verlässliche Basis führen."},
- 2:{score:62,prio:"C",rolle:"IMAGETREIBER",sv:true,preise:[45,39,34,28],plaetze:1123,auslastung:60,faktor:0.88,
-   text:"Mit der realen Gage von 25.000 € (plus 10.000 € Nebenkosten) ist das die zweitteuerste Position der Saison – Fitzek-Geld ohne Fitzek-Zugkraft. Die Argumente dafür bleiben stark: Baden-Baden ausverkauft, affine Elektro-Szene in Konstanz/Zürich im Einzugsgebiet, ein Publikum, das die Stadthalle sonst nie betritt. Aber die Mathematik ist unbestechlich: Break-even läge selbst im Vollausbau mit SV-Preisen bei über 90 % Auslastung – für ein Szene-Format ohne bekannten Namen in Singen nicht erreichbar. Realistisch stehen am Ende −12.000 bis −20.000 € (hier gerechnet: Vollausbau 1.123 Plätze, SV-Preise, 60 % – schon ambitioniert). Das kann eine bewusste Image-Investition sein, muss dann aber als solche entschieden werden: Es wäre gut die Hälfte des Image-Budgets der Saison an einem Abend. Bedingungen für ein Ja: (1) Gage nachverhandeln oder Förderung/Sponsor fürs 'junge Format' sichern, (2) Marketing-Vorlauf ab Sommer mit Club- und Schweiz-Kanälen, (3) Datum klären – steht auf 15.10.2026. Sonst: Alternativen im Urban-/Elektro-Segment zur halben Gage prüfen."},
  3:{score:64,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
    text:"Solider Boulevard-Krimi, Komödienring-Kernware für 50+. Läuft überall, ersetzt nichts, schadet nichts – austauschbar im Wettbewerbsvergleich (Konstanz/Friedrichshafen spielen Vergleichbares). Komödien erreichten 25/26 verlässlich 450–680 Besucher, effektiv 22–23 €/Ticket. Rechnet sich knapp. Buchen."},
  4:{score:70,prio:"B",rolle:"PFLEGE",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
@@ -805,18 +800,14 @@ const ANALYSE_VORGABEN = {
    text:"Der Knaller der Saison und bereits gebucht – richtig so. Fitzek zieht bundesweit 45–65 € Ticketpreis, Bestseller-Bekanntheit erledigt die halbe Werbung, Einzugsgebiet bis in die Schweiz. Als SV kennzeichnen und selbstbewusst bepreisen (K1 55 €). Volles Haus ausbauen: 1.123 Plätze, 85–95 % sind realistisch. Presse-Anker: Hier muss der Südkurier-Aufmacher entstehen, nicht bei den Ringen. Einziger Wermutstropfen: Terminkollision mit dem 1. Kammerkonzert am selben Abend – das Kammerkonzert verlegen."},
  6:{score:58,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,25,0],plaetze:417,auslastung:50,faktor:0.65,
    text:"Kammerkonzerte sind Kulturauftrag, keine Erlösquelle: 180–330 Besucher, effektiv ~18 €/Ticket, planmäßiger Zuschussbedarf ~3.500–4.000 €. Völlig in Ordnung – aber NICHT am selben Abend wie Fitzek (27.11.). Die Kollision kostet beide Seiten Publikum und das Haus Glaubwürdigkeit. Bedingung: Termin verlegen, dann B."},
- 7:{score:0,prio:"C",rolle:"UNGEKLÄRT",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:0,faktor:0.78,
-   text:"Weihnachtskomödie ohne Status, ohne Gage, ohne Vertragspartner-Klarheit. In der Budgetsumme steht sie mit 0 € – das schönt die Saisonbilanz. Erst Konditionen klären, dann bewerten. Bis dahin ist jede Zahl hier Platzhalter."},
+ 7:{av:2,score:63,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
+   text:"Adventskomödie der Komödie am Altstadtmarkt am zweiten Adventswochenende – der Termin verkauft mit. Klassische Ringware für 50+, keine überregionale Sichtbarkeit, aber verlässliche Mechanik: Weihnachtsstimmung plus Komödienring-Basis. Bei 13.000 € Kosten und üblicher Komödien-Auslastung knapp unter Break-even. Buchen; die Gage liegt leicht über eurem Komödien-Schnitt – bei Vertragsschluss Richtung 12.000 € verhandeln."},
  8:{score:72,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:1684,auslastung:75,faktor:0.70,
    text:"Kindertheater ist der stille Star des Hauses: 25/26 liefen Kinderproduktionen mit 640–840 Besuchern nahezu voll – getragen von Schulen und Kitas, nicht von Werbung. Zwei Vorstellungen (06.+07.12.) sind hier eingerechnet (1.684 Plätze). Über Schulmailings im September sichern. Bucht sich fast von selbst ein – A."},
  9:{score:82,prio:"A",rolle:"IMAGETREIBER",sv:false,preise:[42,36,30,24],plaetze:635,auslastung:70,faktor:0.78,
    text:"Völlige Neubewertung: Deutschsprachige Premiere mit Nicholas Ofczarek – Burgtheater-Ikone, einem Millionenpublikum aus 'Der Pass' bekannt. Dass diese Premiere in Singen stattfindet und nicht in München oder Zürich, IST die Geschichte: überregional pressefähig (Feuilleton, nachtkritik), der Beleg für 'das Haus wacht auf'. Bei 10.500 € Gage ein Geschenk. Preise an die obere Rahmenkante (K1 42 €, Rahmen gäbe 50 her – bei Premieren-Framing vertretbar, notfalls SV prüfen). Auslastung 70 % konservativ, Ofczarek zieht auch Konstanz und Schweiz. Pflicht: 'Deutschsprachige Erstaufführung' in jede Zeile Kommunikation, Premierenabend inszenieren (Publikumsgespräch), Feuilleton-Einladungen bundesweit."},
- 10:{score:0,prio:"D",rolle:"UNGEKLÄRT",sv:false,preise:[0,0,0,0],plaetze:842,auslastung:0,faktor:0.75,
-   text:"'xxx' ist kein Programm. Entweder binnen vier Wochen mit Inhalt füllen oder streichen – ein Platzhalter mitten im Dezember blockiert den attraktivsten Termin-Korridor der Saison (12.12., drittes Adventswochenende)."},
  11:{score:90,prio:"A",rolle:"CASHCOW",sv:false,preise:[48,43,37,27],plaetze:1123,auslastung:95,faktor:0.65,
    text:"Die verlässlichste Kasse des Hauses: 25/26 mit 1.086 von 1.088 Plätzen praktisch ausverkauft, effektiv ~26 €/Ticket. Voll auf 1.123 Plätze ausbauen, Neujahrspreise (Rahmen-Obergrenze) ausschöpfen. Erwarteter Überschuss ~15.000–17.000 € – finanziert zwei Kammerkonzerte und ein Wagnis. Nummerierungs-Chaos mit dem '3. Symphoniekonzert' (01.04.) vor Drucklegung bereinigen."},
- 12:{score:0,prio:"C",rolle:"UNGEKLÄRT",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:0,faktor:0.78,
-   text:"Wie die anderen Altstadtmarkt-Produktionen: ohne Status, ohne Gage. Klären oder streichen – Stand heute eine Leerstelle mit Terminreservierung."},
  13:{score:73,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[40,35,29,22],plaetze:815,auslastung:52,faktor:0.80,
    text:"Urban Dance von Landgraf als TOURNEE-PREMIERE – das dreht die Altlisten-Sorge 'fragwürdig wegen anderer Städte' um: Singen ist zuerst dran, die anderen Städte werben danach für einen Abend, den es hier schon gab. 'Tournee-Auftakt' aktiv kommunizieren (Landgraf liefert dafür erfahrungsgemäß Pressematerial und ggf. Ensemble-Präsenz). Zielgruppe Familien und U30, zweites Jugend-Signal neben Techno Ballet. Kalkulatorischer Zuschuss ~2.800 € = Preis fürs Imagesignal, als Premiere gut angelegt. Schriftlich absichern, dass keine Bodensee-Städte in den ersten Tourneewochen folgen."},
  14:{score:67,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
@@ -835,23 +826,47 @@ const ANALYSE_VORGABEN = {
    text:"Symphonischer Saisonabschluss, etwa kostendeckend. Die Doppel-Nummerierung mit dem Neujahrskonzert ('3. Symphoniekonzert' am 08.01. UND 01.04.) muss vor jeder Veröffentlichung bereinigt sein."},
  21:{score:71,prio:"B",rolle:"CASHCOW",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:62,faktor:0.78,
    text:"Glattauer-Fortsetzung ('Gut gegen Nordwind' lief 25/26 mit 519 Besuchern und 11.500 € Umsatz nachweislich gut in Singen). Bekannter Stoff, treues Publikum 45+, niedrige Gage – beste Gewinnchance unter den Sprechtheater-Titeln, erwartet +3.000 bis +4.000 €."},
- 22:{score:0,prio:"C",rolle:"UNGEKLÄRT",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:0,faktor:0.78,
-   text:"Dritter Platzhalter ohne Zahlen (umbreit). Klären oder streichen. Drei ungeklärte Produktionen sind zusammen ein Budgetrisiko von realistisch 25.000–35.000 €, das in keiner Bilanz auftaucht."},
+ 22:{av:2,score:64,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:55,faktor:0.78,
+   text:"Tim Firths schwarze Komödie ('Neville's Island') – vom Autor von 'Calendar Girls': Vier Mittelmanager stranden beim Teambuilding-Wochenende im Novembernebel, Rivalitäten eskalieren, bitterböse komisch. Gehobener Boulevard mit Substanz, Ensemble ohne Star – der 'Calendar Girls'-Autor gehört deshalb in jede Ankündigung. Die Teambuilding-Satire ist eine Steilvorlage für Firmenkontingente an die Singener Industrie. Termin 04.05. liegt spät (Freiluft-Konkurrenz), Kosten leicht über KÖ-Schnitt – nachverhandeln. Erwartung: knapp unter Break-even."},
  23:{score:78,prio:"B",rolle:"IMAGETREIBER",sv:true,preise:[49,43,37,29],plaetze:900,auslastung:62,faktor:0.85,
    text:"Neubewertung mit der Besetzungsinfo: Wieder Ofczarek, dazu prominente Wiener Besetzung (Angabe GF: 'Pralhager' – Schreibweise/Besetzung vor Drucklegung prüfen), Produktion mit Wiener-Staatsopern-Historie. Das ist der Frühjahrs-Leuchtturm, der der Saison bisher fehlte – der zweite Ofczarek-Abend macht daraus eine erzählbare Klammer ('Ofczarek-Saison in Singen'). Die 21.000 € Gage sind im 635er-Ring-Setup nicht einspielbar; die Lösung ist, groß zu denken: als SV führen, 900 Plätze einrichten, Premium-Preise (K1 49 €), Schweiz/Konstanz aktiv bewerben. Dann schrumpft der kalkulatorische Verlust auf ~1.500–3.000 € bei maximalem Imageertrag. Bedingung: Das Marketing baut die Ofczarek-Klammer ab Saisonstart auf, nicht erst im April."}
 };
 const ROLLEN_INFO = {CASHCOW:"trägt die Saison wirtschaftlich", IMAGETREIBER:"zahlt auf Sichtbarkeit & neue Zielgruppen ein", BASIS:"Ringversorgung, solide", PFLEGE:"Kulturauftrag & Stammpublikum", RISIKO:"wirtschaftlich kritisch", UNGEKLÄRT:"Daten fehlen"};
 
+/* Vorgaben für Produktionen, die das Team direkt im Tool angelegt hat (Zuordnung über den Titel).
+   av = Analyse-Version: höhere Version ersetzt gespeicherte ältere Einschätzungen automatisch. */
+const TITEL_VORGABEN = [
+ ["zürich chambers", {av:2,score:60,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,26,20],plaetze:550,auslastung:55,faktor:0.80,
+   text:"Chorformat – das einzige der Saison und damit eine echte Portfolio-Ergänzung: Der Hegau hat eine aktive Laienchorszene, Sänger sind das treueste Konzertpublikum; Vertrieb direkt über Chorverbände und Kirchengemeinden einplanen. Wirtschaftlich hängt alles an den Nebenkosten: Mit den eingetragenen 9.000 € NK ist der Abend ein Zuschussfall von 7.000–8.000 €; laut GF liegen sie real bei ~3.000 € – dann normale Nischenpflege auf Kammerkonzert-Niveau (~−2.000 €). Bedingungen: NK schriftlich bestätigen und hier im Spielplan korrigieren, Chor-Kooperationsvertrieb ab Herbst."}],
+ ["kreutzer", {av:2,score:61,prio:"C",rolle:"PFLEGE",sv:false,preise:[40,34,28,0],plaetze:417,auslastung:60,faktor:0.70,
+   text:"Künstlerisch das feinste Angebot der Saison: Berliner-Philharmoniker-Besetzung plus Concertgebouw-Solocellistin, kluge Dramaturgie (Beethoven–Tolstoi–Janáček, Stummfilm-Projektion) – Feuilleton-tauglich. Wirtschaftlich aber ein viertes Kammerkonzert zum anderthalbfachen Preis: Das Kammerpublikum trägt 180–330 Besucher bei effektiv ~18 €, erwarteter Zuschuss 5.000–7.000 €, und es kannibalisiert die eigene Reihe. Nur sinnvoll als inszeniertes Sonderkonzert mit Partner (Musikverein, Kirche, Sponsor) oder Förderung – und es fehlt noch das Datum. Ohne Partner: streichen."}],
+ ["streichquintett", null] /* Verweis: gleiche Produktion wie 'Kreutzer' – wird unten aufgelöst */
+];
+TITEL_VORGABEN[2][1] = TITEL_VORGABEN[1][1];
+function vorgabeFuer(v){
+  if(ANALYSE_VORGABEN[v.vid]) return ANALYSE_VORGABEN[v.vid];
+  const t = (v.titel||"").toLowerCase();
+  const hit = TITEL_VORGABEN.find(([m])=>t.includes(m));
+  return hit ? hit[1] : null;
+}
 function analyseVon(v){
   if(!daten.analyse) daten.analyse = {};
-  if(!daten.analyse[v.vid]){
-    const d = ANALYSE_VORGABEN[v.vid];
-    daten.analyse[v.vid] = d ? JSON.parse(JSON.stringify(d)) :
+  const vg = vorgabeFuer(v);
+  const vorhanden = daten.analyse[v.vid];
+  if(!vorhanden || (vg && (vorhanden.av||0) < (vg.av||0))){
+    daten.analyse[v.vid] = vg ? JSON.parse(JSON.stringify(vg)) :
       {score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false, preise:[39,34,28,19], plaetze:838, auslastung:55, faktor:0.75,
        text:"Neu angelegte Produktion – Analysewerte bitte prüfen und anpassen (Vorbelegung: Standardannahmen)."};
   }
   return daten.analyse[v.vid];
 }
+/* Geprüfte Kandidaten – analysiert, aber noch nicht im Spielplan */
+const KANDIDATEN = [
+ {titel:"Masou & Leise", score:65, prio:"B", rolle:"IMAGETREIBER",
+  text:"Neoklassik-/Ambient-Duo aus dem Nordschwarzwald (Klavier, Gesang/Electronics, Streicherensemble, Stil 'Scopeclass') – bedient exakt den Trend, den die überall ausverkauften Candlelight-Konzerte belegen: atmosphärische Musik, Licht, Sinnlichkeit, Publikum 30–55, das klassische Häuser sonst nicht erreicht. Regional verwurzelt (BW), presseerprobt (Pforzheimer Zeitung, Kirchentourneen), aber keine etablierte Marke – der Name verkauft nichts, das Erlebnis muss es tun: als Kerzenlicht-/Erlebnisformat inszenieren, Social-first bewerben. Bei vermutet niedriger Gage (regionales Ensemble, geschätzt 4.000–7.000 € – klären!) und 350–450 Besuchern à ~24 € ist sogar ein Plus möglich. Als günstiges Experiment für die dünne Strecke Februar–April die interessanteste Kandidatur. Bedingungen: Gage und Technik-/Lichtkonzept klären – die Kirchenatmosphäre ist Teil des Produkts."},
+ {titel:"Mein schwarzer Teufel (Devid Striesow, Gioia Osthoff)", score:68, prio:"B", rolle:"IMAGETREIBER",
+  text:"Zwei-Personen-Kammerspiel über Sigmund und Anna Freud (BOW Production – euer Partner bei Prag und Große Zeit), gespielt u. a. beim Kultur.Sommer.Semmering und im Wiener MuTh. Striesow bringt echte Doppel-Zugkraft: Tatort-/Kino-Bekanntheit ('Die Fälscher', 'Ich bin dann mal weg') plus Bühnen-Legitimität; Gioia Osthoff kommt vom Theater Freiburg – schöner BW-Bezug. Aber: literarischer Stoff fürs bildungsbürgerliche 55+-Segment, kein Publikumsstück. Erwarteter Zuschuss 2.500–7.000 € je nach Gage (BOW-typisch geschätzt 9.000–14.000 €). Nur als ERSATZ sinnvoll, nicht zusätzlich – Tauschkandidat: Kardinalfehler (Score 62, austauschbare Katalogware, ähnliche Kosten). Dann bekommt die 'Stars in Singen'-Erzählung ihr drittes Kapitel. Prüfen: Tourt die Produktion noch in 27/28? BOW-Dreierpaket (Prag + Große Zeit + Teufel) verhandeln."}
+];
 const KAT_MIX = [0.30,0.30,0.25,0.15];
 function wirtschaft(v){
   const a = analyseVon(v);
@@ -923,7 +938,7 @@ function zeigeAnalyse(){
   }).join("");
   document.getElementById("inhalt").innerHTML = `
     <h2>Strategische Analyse Saison ${daten.saisonAktuell}</h2>
-    <div class="hinweis"><b>Was diese Saison spricht:</b> Mehr, als die Rohdaten verraten – man muss es nur erzählen. Die Saison trägt eine echte Premieren-Handschrift: eine deutschsprachige Erstaufführung mit Nicholas Ofczarek (Weihnachten in Prag), eine Tournee-Premiere (Brodas), ein in Baden-Baden ausverkauftes Szene-Format (Techno Ballet), dazu Fitzek als Massenanker und die Ofczarek-Klammer bis in den Mai (Die Große Zeit). Das ist die Erzählung „das Haus wacht auf" – sie steht aber nirgends drauf: Ohne konsequentes Premieren-Framing in Programmheft, Presse und Social bleibt es ein klassisches Ring-Programm mit teuren Gästen. Vier Produktionen ohne Zahlen unterhöhlen die Budgetaussage, Februar–April bleibt der dünnste Abschnitt. Die Abo-Basis erodiert strukturell (−37 % Plätze seit 2020, Neuanmeldungen −65 %, überwiegend demografisch = nicht rückholbar): Der Freiverkauf und die wachsenden Kombi-Pakete müssen die Erzählung tragen – sie gehören in jede Kampagne.</div>
+    <div class="hinweis"><b>Was diese Saison spricht:</b> Sie trägt eine echte Premieren-Handschrift: eine deutschsprachige Erstaufführung mit Nicholas Ofczarek (Weihnachten in Prag), eine Tournee-Premiere (Brodas), Fitzek als Massenanker und die Ofczarek-Klammer bis in den Mai (Die Große Zeit). Das ist die Erzählung „das Haus wacht auf" – sie steht aber nirgends drauf: Ohne konsequentes Premieren-Framing in Programmheft, Presse und Social bleibt es ein klassisches Ring-Programm mit teuren Gästen. Nach der Techno-Absage (richtig entschieden: schlechtestes Kosten-Nutzen-Verhältnis des Plans) hängt das junge Publikum allein an Brodas – die frei gewordenen Mittel decken die Budgetlücke, ersetzen aber kein Signal; ein günstiges Experiment für Februar–April steht unter den Kandidaten unten. Die Abo-Basis erodiert strukturell (−37 % Plätze seit 2020, Neuanmeldungen −65 %, überwiegend demografisch = nicht rückholbar): Der Freiverkauf und die wachsenden Kombi-Pakete müssen die Erzählung tragen – sie gehören in jede Kampagne.</div>
     <div class="warnbox"><b>Regionale Marktlage Singen/Hegau:</b> Der Standort operiert nachweislich in einem strukturell anspruchsvolleren Markt als vergleichbare Tourneehäuser. Erstens die Nachfragebasis: Die Abo-Auswertung belegt eine Erosion der gebundenen Nachfrage um −37 % seit 2020 (Plätze) bei −65 % Neuanmeldungen seit 2019 – überwiegend demografisch bedingt und damit nicht rückgewinnbar; jede Produktion muss heute einen größeren Anteil ihres Publikums im Freiverkauf erobern als noch vor fünf Jahren. Zweitens die Wettbewerbsdichte: Konstanz, Schaffhausen, Winterthur und Zürich liegen in Pendeldistanz und schöpfen das kaufkräftige, mobile Kultursegment ab – dieselbe Grenznähe, die beim Verkauf hilft (Schweizer Gäste), wirkt beim Stammpublikum als Abfluss. Drittens die Standortökonomie: Singen ist Industrie-Mittelzentrum mit Kaufkraft unter dem Niveau der Bodensee-Uferlagen, und die touristischen Ströme enden am See, nicht im Hegau. Konsequenz für dieses Tool: Tournee-Auslastungswerte anderer Städte sind auf Singen nicht übertragbar; alle Auslastungsannahmen unten sind an den tatsächlichen Ist-Werten des Hauses aus 25/26 kalibriert. Was sich daraus ableitet: Produktionen brauchen hier entweder gebundene Nachfrage (Ringe, Schulen), überregionale Zugkraft (Stars, Premieren) oder ein Alleinstellungsmerkmal im Umkreis – reine Katalogware trägt sich in diesem Markt nicht mehr.</div>
     <h3>Saisonbilanz (Ticketerlöse vs. Gagen + Nebenkosten)</h3>
     <div class="karten">
@@ -935,6 +950,12 @@ function zeigeAnalyse(){
     <div class="warnbox">Diese Rechnung vergleicht nur Ticketerlöse mit Gagen und Nebenkosten – Hauskosten (Personal, Technik, Energie) und Marketing sind nicht enthalten. ${b.ungeklaert>0?`<b>${b.ungeklaert} Produktion(en) stehen ohne Gage in der Bilanz</b> – das tatsächliche Risiko liegt um schätzungsweise 25.000–35.000 € höher.`:""} Ein moderates Saison-Defizit ist bei diesem Auftrag kein Versagen: Fitzek und Neujahrskonzert finanzieren die Imagetreiber quer – das ist die Währung „Aufmerksamkeit", von der du sprichst, nur ehrlich beziffert.</div>
     <h3>Hebel zur Ergebnisverbesserung bei Verlust-Produktionen</h3>
     <div class="hinweis"><b>1. Gagenmodell wandeln:</b> Bei teuren Wagnissen (Techno Ballet) Festgage in Sockel + Einnahmenbeteiligung umverhandeln – verlagert Risiko zum Veranstalter-Partner, der an seine Zugkraft glaubt. <b>2. Zweitvorstellungen:</b> Wo die Anreise bezahlt ist, kostet die zweite Vorstellung fast nichts (Pumuckl-Dienstag fixieren ≈ +3.500 €; bei Kinderproduktionen Schulvormittage). <b>3. Förderung &amp; Sponsoring:</b> Junge Formate (Techno, Brodas) sind förderfähig – Landesprogramme BW für zeitgenössische Formate, Kulturstiftungen, lokale Banken/Industrie als Format-Paten (realistisch 5.000–10.000 € pro Saison). <b>4. Nebenkosten drücken:</b> Übernachtung/Catering über lokale Partner gegen Sichtbarkeit – bei den großen NK-Pauschalen sind 10–20 % drin. <b>5. Cross-Selling:</b> Ofczarek-Kombiticket (Prag + Große Zeit, −15 %) bindet Freiverkauf früh; Kombi 4/6 in jede Kampagne. <b>6. B2B &amp; Gruppen:</b> Firmenkontingente an Singener Industrie, Schulen für Der Sohn/Videobeweis, Vereine für Brodas. <b>7. Raummodularität:</b> Lieber klein einrichten und ausverkauft melden als groß und halb leer – „ausverkauft" ist Marketing für die Folgesaison. <b>8. Kammerkonzerte ehrlich führen:</b> Zuschuss ist Kulturauftrag – Ziel ist Deckelung (max. ~3.500 €/Konzert), nicht Break-even-Illusion.</div>
+    <h3>Geprüfte Kandidaten – analysiert, noch nicht im Spielplan</h3>
+    ${KANDIDATEN.map(k=>`<div class="akarte">
+      <div class="akopf"><span class="score prio${k.prio}">${k.score}</span>
+      <div><b style="font-size:16px">${k.titel}</b><div class="fussnote">Kandidat · Priorität ${k.prio}</div></div>
+      <span style="flex:1"></span><span class="rolle">${k.rolle}</span></div>
+      <div class="atext">${k.text}</div></div>`).join("")}
     <h3>Alle Produktionen (${liste.length}) – Score, Rolle, Preise, Wirtschaftlichkeit</h3>
     <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Alle Annahmen (Plätze, Auslastung, Preise, Erlösfaktor) sind direkt editierbar – die Bilanz oben rechnet sofort mit. Der Erlösfaktor bildet ab, dass Abos und Ermäßigungen den Kassenpreis verwässern (kalibriert an euren 25/26-Istwerten).</p>
     ${karten}`;
