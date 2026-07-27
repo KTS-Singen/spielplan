@@ -108,10 +108,12 @@
 </header>
 <nav id="hauptnav">
   <button data-tab="uebersicht" class="aktiv" onclick="zeigeTab('uebersicht')">Übersicht</button>
-  <button data-tab="plan" onclick="zeigeTab('plan')">Spielplan</button>
+  <button data-tab="plan" onclick="zeigeTab('plan')">Planung</button>
+  <button data-tab="fix" onclick="zeigeTab('fix')">Spielplan</button>
   <button data-tab="kalender" onclick="zeigeTab('kalender')">Kalender</button>
   <button data-tab="auswertung" onclick="zeigeTab('auswertung')">Auswertung</button>
   <button data-tab="analyse" onclick="zeigeTab('analyse')">Analyse</button>
+  <button data-tab="markt" onclick="zeigeTab('markt')">Marktforschung</button>
 </nav>
 <main id="inhalt"></main>
 
@@ -510,7 +512,7 @@ let aktuellerTab = "uebersicht";
 function zeigeTab(tab){
   aktuellerTab = tab;
   document.querySelectorAll("#hauptnav button").forEach(b=>b.classList.toggle("aktiv", b.dataset.tab===tab));
-  ({uebersicht:zeigeUebersicht, plan:zeigePlan, kalender:zeigeKalender, auswertung:zeigeAuswertung, analyse:zeigeAnalyse})[tab]();
+  ({uebersicht:zeigeUebersicht, plan:zeigePlan, fix:zeigeFix, kalender:zeigeKalender, auswertung:zeigeAuswertung, analyse:zeigeAnalyse, markt:zeigeMarkt})[tab]();
   window.scrollTo(0,0);
 }
 function budgetFeld(feld, wert){
@@ -607,7 +609,8 @@ function zeigePlan(filterStatus, filterSparte){
       <td><b>${euro(gesamt(v))}</b></td></tr>`;
   });
   document.getElementById("inhalt").innerHTML = `
-    <h2>Spielplan ${daten.saisonAktuell} – Planung</h2>
+    <h2>Planung ${daten.saisonAktuell} – alle Projekte</h2>
+    <p class="fussnote" style="margin-top:-8px">Arbeitsliste: Hier steht alles, woran gearbeitet wird – verbindlich wird eine Produktion erst mit Status <b>gebucht</b>, dann erscheint sie automatisch im Reiter „Spielplan".</p>
     <div class="leiste">
       <button class="aktion" onclick="vaDialogOeffnen(null)">+ Neue Veranstaltung</button>
       <select onchange="zeigePlan(this.value, '${selSparte}')">
@@ -624,6 +627,33 @@ function zeigePlan(filterStatus, filterSparte){
     <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Status</th><th>Gage</th><th>Nebenkosten</th><th>Gesamt</th></tr>
     ${zeilen}
     </table>`;
+}
+
+function zeigeFix(){
+  const liste = sortiert().filter(v=>v.status==="gebucht");
+  const summe = liste.reduce((a,v)=>a+gesamt(v),0);
+  let zeilen = "", letztesJahr = null;
+  liste.forEach(v=>{
+    const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
+    if(jahr !== letztesJahr){
+      zeilen += `<tr class="jahrtrenner"><td colspan="6">▸ ${jahr==="ohne Datum"?"OHNE DATUM":jahr}</td></tr>`;
+      letztesJahr = jahr;
+    }
+    zeilen += `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}</td>
+      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
+      <td>${euro(+v.gage||0)}</td><td><b>${euro(gesamt(v))}</b></td></tr>`;
+  });
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Spielplan ${daten.saisonAktuell} – fix gebuchte Produktionen</h2>
+    ${liste.length===0
+      ? '<div class="hinweis">Noch keine gebuchten Produktionen. Sobald in der <b>Planung</b> eine Produktion auf den Status „gebucht" gestellt wird, erscheint sie automatisch hier.</div>'
+      : `<div class="leiste"><span class="fussnote">${liste.length} Produktion(en) fix · Gesamtkosten ${euro(summe)} · Zeile anklicken zum Bearbeiten</span></div>
+    <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Gage</th><th>Gesamt</th></tr>
+    ${zeilen}
+    </table>`}
+    <p class="fussnote">Dieser Reiter ist die verbindliche Sicht – geeignet für Abstimmungen mit Technik, Presse und Vorverkauf.</p>`;
 }
 
 let kalMonat = null;
@@ -836,13 +866,23 @@ const ROLLEN_INFO = {CASHCOW:"trägt die Saison wirtschaftlich", IMAGETREIBER:"z
 /* Vorgaben für Produktionen, die das Team direkt im Tool angelegt hat (Zuordnung über den Titel).
    av = Analyse-Version: höhere Version ersetzt gespeicherte ältere Einschätzungen automatisch. */
 const TITEL_VORGABEN = [
- ["zürich chambers", {av:2,score:60,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,26,20],plaetze:550,auslastung:55,faktor:0.80,
-   text:"Chorformat – das einzige der Saison und damit eine echte Portfolio-Ergänzung: Der Hegau hat eine aktive Laienchorszene, Sänger sind das treueste Konzertpublikum; Vertrieb direkt über Chorverbände und Kirchengemeinden einplanen. Wirtschaftlich hängt alles an den Nebenkosten: Mit den eingetragenen 9.000 € NK ist der Abend ein Zuschussfall von 7.000–8.000 €; laut GF liegen sie real bei ~3.000 € – dann normale Nischenpflege auf Kammerkonzert-Niveau (~−2.000 €). Bedingungen: NK schriftlich bestätigen und hier im Spielplan korrigieren, Chor-Kooperationsvertrieb ab Herbst."}],
- ["kreutzer", {av:2,score:61,prio:"C",rolle:"PFLEGE",sv:false,preise:[40,34,28,0],plaetze:417,auslastung:60,faktor:0.70,
-   text:"Künstlerisch das feinste Angebot der Saison: Berliner-Philharmoniker-Besetzung plus Concertgebouw-Solocellistin, kluge Dramaturgie (Beethoven–Tolstoi–Janáček, Stummfilm-Projektion) – Feuilleton-tauglich. Wirtschaftlich aber ein viertes Kammerkonzert zum anderthalbfachen Preis: Das Kammerpublikum trägt 180–330 Besucher bei effektiv ~18 €, erwarteter Zuschuss 5.000–7.000 €, und es kannibalisiert die eigene Reihe. Nur sinnvoll als inszeniertes Sonderkonzert mit Partner (Musikverein, Kirche, Sponsor) oder Förderung – und es fehlt noch das Datum. Ohne Partner: streichen."}],
- ["streichquintett", null] /* Verweis: gleiche Produktion wie 'Kreutzer' – wird unten aufgelöst */
+ ["zürich chambers", {av:3,score:58,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,26,20],plaetze:550,auslastung:55,faktor:0.80,
+   text:"Nebenkosten sind auf 3.000 € korrigiert – damit normale Nischenpflege (~−2.000 €) statt Zuschussfall, und das einzige Chorformat der Saison bleibt eine echte Portfolio-Ergänzung (aktive Laienchorszene im Hegau, Vertrieb über Chorverbände und Kirchengemeinden). ABER: Der Termin 18.03. kollidiert mit dem 3. Kammerkonzert – zwei Klassik-Nischenformate am selben Abend nehmen sich gegenseitig das ohnehin kleine Publikum. Bedingung für ein Ja: einen der beiden Termine verlegen. Bis dahin Priorität C – der Konflikt ist hausgemacht und lösbar."}],
+ ["kreutzer", null],
+ ["streichquintett", {av:3,score:66,prio:"B",rolle:"PFLEGE",sv:false,preise:[40,34,28,0],plaetze:417,auslastung:60,faktor:0.70,
+   text:"Neubewertung nach der Straffung der Kammerreihe: Als eines von nur noch zwei Kammerformaten kannibalisiert das Quintett nichts mehr, sondern ersetzt die gestrichenen Konzerte würdig – und zwar mit dem stärksten Kammerprogramm seit Jahren: Berliner-Philharmoniker-Besetzung plus Concertgebouw-Solocellistin, kluge Dramaturgie (Beethoven–Tolstoi–Janáček, Stummfilm-Projektion), Feuilleton-tauglich. Wirtschaftlich bleibt es Kulturauftrag: erwarteter Zuschuss ~5.000 €, etwas über dem alten Kammer-Niveau. Die Film-Story ins Marketing (VHS, Literaturkreise, Kino-Kooperation), dann sind auch 70 % drin."}],
+ ["lehrerzimmer", {av:3,score:72,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[38,33,27,21],plaetze:635,auslastung:62,faktor:0.75,
+   text:"Kluger Neuzugang: 'Das Lehrerzimmer' trägt die Marke des Oscar-nominierten Kinoerfolgs – ein Zeitgeist-Stoff (Wahrheit, Misstrauen, Eskalation im System Schule), der weit über das Ring-Publikum hinaus anschlussfähig ist. Zielgruppen: 40–65, Lehrkräfte, Bildungsbürgertum; Kooperationspotenzial mit Schulamt, GEW, Elternbeiräten – ein Themenabend mit Nachgespräch hebt die Auslastung spürbar. A.gon ist verlässliche Tourneequalität. Bei 13.190 € Kosten und 60–65 % bleibt ein kalkulierter Zuschuss von ~3.500–4.500 € – für den zweitstärksten Schauspiel-Stoff der Saison (nach der Ofczarek-Premiere) gut angelegt. Die AVA-/Bearbeitungsabgabe ist sauber erfasst."}],
+ ["lustigen weiber", {av:3,score:66,prio:"B",rolle:"BASIS",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:55,faktor:0.78,
+   text:"Zurück im Plan, jetzt mit belastbaren Zahlen – und als günstigste Komödien-Position (9.200 € inkl. sauber aufgeschlüsselter Musik-/AVA-Abgaben) die wirtschaftlich attraktivste: Bei üblicher Komödien-Auslastung bleibt ein erwartetes Plus von ~2.000–2.500 €. Shakespeare-Boulevard vom Altstadtmarkt, verlässliche 50+-Ware, Februar-Termin unkritisch. Buchen – eine der wenigen Positionen, die die Saisonbilanz entlasten."}],
+ ["schwarzer teufel", {av:3,score:64,prio:"C",rolle:"IMAGETREIBER",sv:false,preise:[40,34,28,22],plaetze:635,auslastung:55,faktor:0.75,
+   text:"Devid Striesow bringt echte Doppel-Zugkraft (Tatort, 'Die Fälscher', 'Ich bin dann mal weg'), Gioia Osthoff den BW-Bezug (Theater Freiburg), BOW ist euer bewährter Partner – aber mit real 15.000 € Kosten ist der Freud-Kammerspielabend teurer als kalkuliert und trifft dasselbe bildungsbürgerliche 55+-Segment wie eure übrigen Literatur-/Kammerformate. Erwarteter Zuschuss ~6.500–7.000 €. Bei −103.890 € Budgetüberzug gilt verschärft: NUR als Ersatz sinnvoll (Tauschkandidat: Kardinalfehler, Score 62, ähnliche Kosten, keine Marke), nicht zusätzlich. Zwei Hebel: BOW-Dreierpaket verhandeln (Prag + Große Zeit + Teufel) und Termin klären – die Produktion braucht noch ein Datum."}],
+ ["mazou", null],
+ ["masou", {av:3,score:62,prio:"C",rolle:"IMAGETREIBER",sv:true,preise:[32,28,24,20],plaetze:600,auslastung:58,faktor:0.85,
+   text:"Neoklassik-/Ambient-Duo aus dem Nordschwarzwald mit Streicherensemble – bedient exakt den Candlelight-Trend und erreicht Publikum 30–55, das sonst nicht ins Haus kommt. Mit den eingetragenen 11.000 € Kosten (Gage 8.000) liegt es über meinem Schätzband für ein regionales Ensemble ohne Marken-Zugkraft: Erwarteter Zuschuss ~3.000 €, Break-even erst bei ~75 %. Als SV mit freien Preisen führen und als Kerzenlicht-/Erlebnisformat inszenieren – der Name verkauft nichts, das Erlebnis muss es tun (Social-first, Licht, Bühnenbild; die Kirchenatmosphäre ist Teil des Produkts). Bedingungen: Gage Richtung 6.000 € verhandeln oder Erlebnis-Produktion konsequent budgetieren; Termin in die dünne Strecke Februar–April legen. Dann ein sinnvolles günstiges Experiment als Techno-Nachfolger."}]
 ];
-TITEL_VORGABEN[2][1] = TITEL_VORGABEN[1][1];
+TITEL_VORGABEN[1][1] = TITEL_VORGABEN[2][1];
+TITEL_VORGABEN[5][1] = TITEL_VORGABEN[6][1];
 function vorgabeFuer(v){
   if(ANALYSE_VORGABEN[v.vid]) return ANALYSE_VORGABEN[v.vid];
   const t = (v.titel||"").toLowerCase();
@@ -860,13 +900,10 @@ function analyseVon(v){
   }
   return daten.analyse[v.vid];
 }
-/* Geprüfte Kandidaten – analysiert, aber noch nicht im Spielplan */
-const KANDIDATEN = [
- {titel:"Masou & Leise", score:65, prio:"B", rolle:"IMAGETREIBER",
-  text:"Neoklassik-/Ambient-Duo aus dem Nordschwarzwald (Klavier, Gesang/Electronics, Streicherensemble, Stil 'Scopeclass') – bedient exakt den Trend, den die überall ausverkauften Candlelight-Konzerte belegen: atmosphärische Musik, Licht, Sinnlichkeit, Publikum 30–55, das klassische Häuser sonst nicht erreicht. Regional verwurzelt (BW), presseerprobt (Pforzheimer Zeitung, Kirchentourneen), aber keine etablierte Marke – der Name verkauft nichts, das Erlebnis muss es tun: als Kerzenlicht-/Erlebnisformat inszenieren, Social-first bewerben. Bei vermutet niedriger Gage (regionales Ensemble, geschätzt 4.000–7.000 € – klären!) und 350–450 Besuchern à ~24 € ist sogar ein Plus möglich. Als günstiges Experiment für die dünne Strecke Februar–April die interessanteste Kandidatur. Bedingungen: Gage und Technik-/Lichtkonzept klären – die Kirchenatmosphäre ist Teil des Produkts."},
- {titel:"Mein schwarzer Teufel (Devid Striesow, Gioia Osthoff)", score:68, prio:"B", rolle:"IMAGETREIBER",
-  text:"Zwei-Personen-Kammerspiel über Sigmund und Anna Freud (BOW Production – euer Partner bei Prag und Große Zeit), gespielt u. a. beim Kultur.Sommer.Semmering und im Wiener MuTh. Striesow bringt echte Doppel-Zugkraft: Tatort-/Kino-Bekanntheit ('Die Fälscher', 'Ich bin dann mal weg') plus Bühnen-Legitimität; Gioia Osthoff kommt vom Theater Freiburg – schöner BW-Bezug. Aber: literarischer Stoff fürs bildungsbürgerliche 55+-Segment, kein Publikumsstück. Erwarteter Zuschuss 2.500–7.000 € je nach Gage (BOW-typisch geschätzt 9.000–14.000 €). Nur als ERSATZ sinnvoll, nicht zusätzlich – Tauschkandidat: Kardinalfehler (Score 62, austauschbare Katalogware, ähnliche Kosten). Dann bekommt die 'Stars in Singen'-Erzählung ihr drittes Kapitel. Prüfen: Tourt die Produktion noch in 27/28? BOW-Dreierpaket (Prag + Große Zeit + Teufel) verhandeln."}
-];
+/* Geprüfte Kandidaten – analysiert, aber noch nicht in der Planung (aktuell leer:
+   Masou & Leise und Mein schwarzer Teufel wurden in die Planung übernommen und
+   werden dort per Titel-Zuordnung mit Volltext-Analysen versehen) */
+const KANDIDATEN = [];
 const KAT_MIX = [0.30,0.30,0.25,0.15];
 function wirtschaft(v){
   const a = analyseVon(v);
@@ -939,7 +976,6 @@ function zeigeAnalyse(){
   document.getElementById("inhalt").innerHTML = `
     <h2>Strategische Analyse Saison ${daten.saisonAktuell}</h2>
     <div class="hinweis"><b>Was diese Saison spricht:</b> Sie trägt eine echte Premieren-Handschrift: eine deutschsprachige Erstaufführung mit Nicholas Ofczarek (Weihnachten in Prag), eine Tournee-Premiere (Brodas), Fitzek als Massenanker und die Ofczarek-Klammer bis in den Mai (Die Große Zeit). Das ist die Erzählung „das Haus wacht auf" – sie steht aber nirgends drauf: Ohne konsequentes Premieren-Framing in Programmheft, Presse und Social bleibt es ein klassisches Ring-Programm mit teuren Gästen. Nach der Techno-Absage (richtig entschieden: schlechtestes Kosten-Nutzen-Verhältnis des Plans) hängt das junge Publikum allein an Brodas – die frei gewordenen Mittel decken die Budgetlücke, ersetzen aber kein Signal; ein günstiges Experiment für Februar–April steht unter den Kandidaten unten. Die Abo-Basis erodiert strukturell (−37 % Plätze seit 2020, Neuanmeldungen −65 %, überwiegend demografisch = nicht rückholbar): Der Freiverkauf und die wachsenden Kombi-Pakete müssen die Erzählung tragen – sie gehören in jede Kampagne.</div>
-    <div class="warnbox"><b>Regionale Marktlage Singen/Hegau:</b> Der Standort operiert nachweislich in einem strukturell anspruchsvolleren Markt als vergleichbare Tourneehäuser. Erstens die Nachfragebasis: Die Abo-Auswertung belegt eine Erosion der gebundenen Nachfrage um −37 % seit 2020 (Plätze) bei −65 % Neuanmeldungen seit 2019 – überwiegend demografisch bedingt und damit nicht rückgewinnbar; jede Produktion muss heute einen größeren Anteil ihres Publikums im Freiverkauf erobern als noch vor fünf Jahren. Zweitens die Wettbewerbsdichte: Konstanz, Schaffhausen, Winterthur und Zürich liegen in Pendeldistanz und schöpfen das kaufkräftige, mobile Kultursegment ab – dieselbe Grenznähe, die beim Verkauf hilft (Schweizer Gäste), wirkt beim Stammpublikum als Abfluss. Drittens die Standortökonomie: Singen ist Industrie-Mittelzentrum mit Kaufkraft unter dem Niveau der Bodensee-Uferlagen, und die touristischen Ströme enden am See, nicht im Hegau. Konsequenz für dieses Tool: Tournee-Auslastungswerte anderer Städte sind auf Singen nicht übertragbar; alle Auslastungsannahmen unten sind an den tatsächlichen Ist-Werten des Hauses aus 25/26 kalibriert. Was sich daraus ableitet: Produktionen brauchen hier entweder gebundene Nachfrage (Ringe, Schulen), überregionale Zugkraft (Stars, Premieren) oder ein Alleinstellungsmerkmal im Umkreis – reine Katalogware trägt sich in diesem Markt nicht mehr.</div>
     <h3>Saisonbilanz (Ticketerlöse vs. Gagen + Nebenkosten)</h3>
     <div class="karten">
       <div class="karte"><div class="wert">${euro(b.kosten)}</div><div class="label">Produktionskosten (ohne „abgesagt")</div></div>
@@ -950,7 +986,7 @@ function zeigeAnalyse(){
     <div class="warnbox">Diese Rechnung vergleicht nur Ticketerlöse mit Gagen und Nebenkosten – Hauskosten (Personal, Technik, Energie) und Marketing sind nicht enthalten. ${b.ungeklaert>0?`<b>${b.ungeklaert} Produktion(en) stehen ohne Gage in der Bilanz</b> – das tatsächliche Risiko liegt um schätzungsweise 25.000–35.000 € höher.`:""} Ein moderates Saison-Defizit ist bei diesem Auftrag kein Versagen: Fitzek und Neujahrskonzert finanzieren die Imagetreiber quer – das ist die Währung „Aufmerksamkeit", von der du sprichst, nur ehrlich beziffert.</div>
     <h3>Hebel zur Ergebnisverbesserung bei Verlust-Produktionen</h3>
     <div class="hinweis"><b>1. Gagenmodell wandeln:</b> Bei teuren Wagnissen (Techno Ballet) Festgage in Sockel + Einnahmenbeteiligung umverhandeln – verlagert Risiko zum Veranstalter-Partner, der an seine Zugkraft glaubt. <b>2. Zweitvorstellungen:</b> Wo die Anreise bezahlt ist, kostet die zweite Vorstellung fast nichts (Pumuckl-Dienstag fixieren ≈ +3.500 €; bei Kinderproduktionen Schulvormittage). <b>3. Förderung &amp; Sponsoring:</b> Junge Formate (Techno, Brodas) sind förderfähig – Landesprogramme BW für zeitgenössische Formate, Kulturstiftungen, lokale Banken/Industrie als Format-Paten (realistisch 5.000–10.000 € pro Saison). <b>4. Nebenkosten drücken:</b> Übernachtung/Catering über lokale Partner gegen Sichtbarkeit – bei den großen NK-Pauschalen sind 10–20 % drin. <b>5. Cross-Selling:</b> Ofczarek-Kombiticket (Prag + Große Zeit, −15 %) bindet Freiverkauf früh; Kombi 4/6 in jede Kampagne. <b>6. B2B &amp; Gruppen:</b> Firmenkontingente an Singener Industrie, Schulen für Der Sohn/Videobeweis, Vereine für Brodas. <b>7. Raummodularität:</b> Lieber klein einrichten und ausverkauft melden als groß und halb leer – „ausverkauft" ist Marketing für die Folgesaison. <b>8. Kammerkonzerte ehrlich führen:</b> Zuschuss ist Kulturauftrag – Ziel ist Deckelung (max. ~3.500 €/Konzert), nicht Break-even-Illusion.</div>
-    <h3>Geprüfte Kandidaten – analysiert, noch nicht im Spielplan</h3>
+    ${KANDIDATEN.length===0?"":`<h3>Geprüfte Kandidaten – analysiert, noch nicht in der Planung</h3>`}
     ${KANDIDATEN.map(k=>`<div class="akarte">
       <div class="akopf"><span class="score prio${k.prio}">${k.score}</span>
       <div><b style="font-size:16px">${k.titel}</b><div class="fussnote">Kandidat · Priorität ${k.prio}</div></div>
@@ -959,6 +995,67 @@ function zeigeAnalyse(){
     <h3>Alle Produktionen (${liste.length}) – Score, Rolle, Preise, Wirtschaftlichkeit</h3>
     <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Alle Annahmen (Plätze, Auslastung, Preise, Erlösfaktor) sind direkt editierbar – die Bilanz oben rechnet sofort mit. Der Erlösfaktor bildet ab, dass Abos und Ermäßigungen den Kassenpreis verwässern (kalibriert an euren 25/26-Istwerten).</p>
     ${karten}`;
+}
+
+
+/* ================= MARKTFORSCHUNG ================= */
+function zeigeMarkt(){
+  /* Genrestärke: reale Durchschnitts-Auslastung und Effektiverlöse der Saison 25/26 (Archiv Mediaplaner) */
+  const genres = [
+    ["Kindertheater", 90, 8.0, "Schulen und Kitas füllen verlässlich – stärkstes Genre des Hauses"],
+    ["Neujahrskonzert", 100, 25.8, "praktisch ausverkauft, höchster Effektiverlös"],
+    ["Komödie", 67, 22.5, "verlässlicher Kern des Freiverkaufs, 450–680 Besucher"],
+    ["Musik/Show", 65, 26.0, "stark bei bekannten Namen, schwach ohne (42–91 % Spannweite)"],
+    ["Symphoniekonzert", 63, 19.7, "abo-getragen, stabil, wenig Freiverkaufs-Hebel"],
+    ["Kammerkonzert", 57, 18.0, "Kulturauftrag – kleinstes Publikum, treuestes Publikum"],
+    ["Schauspiel", 56, 21.0, "schwächstes Genre im Freiverkauf – trägt nur mit Marke oder Star"]
+  ];
+  const konkurrenz = [
+    ["Stadthalle Tuttlingen", "~30 Min", "nahezu identisches Gastspielprofil (Theater, Comedy, Klassik)", "hoch"],
+    ["Milchwerk Radolfzell", "~15 Min", "Gastspiele, Comedy, Vorträge – direktester Nachbar", "hoch"],
+    ["Stadttheater Schaffhausen", "~20 Min (CH)", "gemischtes Gastspielprogramm, zieht deutsches Grenzpublikum", "hoch"],
+    ["Stadttheater Konstanz", "~30 Min", "Eigenproduktionen Schauspiel, festes Ensemble", "mittel"],
+    ["Bodenseeforum Konstanz", "~30 Min", "Comedy, Shows, Kongresse", "mittel"],
+    ["Theater am Ring / Franziskaner VS", "~35 Min", "Gastspiele Theater und Klassik", "mittel"],
+    ["GZH Friedrichshafen", "~50 Min", "große Shows, Klassik, Comedy", "mittel"],
+    ["Theater Winterthur", "~45 Min (CH)", "größtes Gastspielhaus der Ostschweiz, hohes Niveau", "mittel"],
+    ["Konzerthaus Ravensburg", "~60 Min", "Klassik-Schwerpunkt", "niedrig"],
+    ["Zürich (Opern-/Schauspielhaus u. a.)", "~50 Min (CH)", "Weltklasse-Sog für Premium-Publikum – nicht einholbar, nur umgehbar", "strukturell"]
+  ];
+  const zielgruppen = [
+    ["Stammpublikum 55+", "Kern des Hauses", "Solide Kaufkraft, hohe Verfügbarkeit, aber demografisch schrumpfend (Abo −37 % seit 2020). Reagiert auf Vertrautes plus Qualität – Stars, bekannte Stoffe, Ringe."],
+    ["Familien (30–50 m. Kindern)", "Volumenbringer", "Preissensibel, aber verlässlich über Schulen/Kitas mobilisierbar – belegt durch 90 % Kinder-Auslastung. Niedrige Preise, hohe Stückzahl."],
+    ["Berufstätige 30–55", "größtes ungenutztes Potenzial", "Kaufkraft vorhanden, kommt nur für Erlebnis und Marke (Fitzek, Candlelight-Formate, Zeitgeist-Stoffe). Erreichbar über Social, nicht über Abo."],
+    ["Schweizer Grenzgänger/Gäste", "Premium-Chance", "Höchste Kaufkraft der Region, deutsche Preise wirken günstig – kommt aber nur bei überregionalem Anlass (Ofczarek, Fitzek). Braucht gezielte CH-Kanäle."],
+    ["U30 / Szene", "strategische Zukunft", "Begrenzte Kaufkraft, hohe Erlebnisbereitschaft. Ohne eigenes Format (Urban, Elektro, Comedy) bleibt diese Gruppe komplett bei Zürich/Konstanz."]
+  ];
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Marktforschung – Region Singen/Hegau/Bodensee</h2>
+    <div class="warnbox"><b>Regionale Marktlage Singen/Hegau:</b> Der Standort operiert nachweislich in einem strukturell anspruchsvolleren Markt als vergleichbare Tourneehäuser. Erstens die Nachfragebasis: Die Abo-Auswertung belegt eine Erosion der gebundenen Nachfrage um −37 % seit 2020 (Plätze) bei −65 % Neuanmeldungen seit 2019 – überwiegend demografisch bedingt und damit nicht rückgewinnbar; jede Produktion muss heute einen größeren Anteil ihres Publikums im Freiverkauf erobern als noch vor fünf Jahren. Zweitens die Wettbewerbsdichte: Konstanz, Schaffhausen, Winterthur und Zürich liegen in Pendeldistanz und schöpfen das kaufkräftige, mobile Kultursegment ab – dieselbe Grenznähe, die beim Verkauf hilft (Schweizer Gäste), wirkt beim Stammpublikum als Abfluss. Drittens die Standortökonomie: Singen ist Industrie-Mittelzentrum mit Kaufkraft unter dem Niveau der Bodensee-Uferlagen, und die touristischen Ströme enden am See, nicht im Hegau. Konsequenz für dieses Tool: Tournee-Auslastungswerte anderer Städte sind auf Singen nicht übertragbar; alle Auslastungsannahmen unten sind an den tatsächlichen Ist-Werten des Hauses aus 25/26 kalibriert. Was sich daraus ableitet: Produktionen brauchen hier entweder gebundene Nachfrage (Ringe, Schulen), überregionale Zugkraft (Stars, Premieren) oder ein Alleinstellungsmerkmal im Umkreis – reine Katalogware trägt sich in diesem Markt nicht mehr.</div>
+    <h3>Einzugsgebiet (Näherungswerte)</h3>
+    <div class="karten">
+      <div class="karte"><div class="wert">~48.000</div><div class="label">Einwohner Singen (Kernstadt)</div></div>
+      <div class="karte"><div class="wert">~290.000</div><div class="label">Landkreis Konstanz gesamt</div></div>
+      <div class="karte"><div class="wert">~30 Min</div><div class="label">Fahrzeit-Radius: Hegau, westl. Bodensee, Schaffhausen (CH)</div></div>
+      <div class="karte"><div class="wert">1.123</div><div class="label">max. Platzkapazität (modular anpassbar)</div></div>
+    </div>
+    <h3>Genrestärke – reale Durchschnitts-Auslastung Saison 25/26 (eigene Ist-Daten)</h3>
+    ${genres.map(([g,a,e,txt])=>`
+      <div class="balkenzeile"><div class="bname">${g}</div>
+      <div class="balken"><div style="width:${a}%;${a>=75?"background:var(--gruen)":a<60?"background:var(--gelb)":""}"></div></div>
+      <div class="bwert">${a} % · ${String(e).replace(".",",")} €/Ticket</div></div>
+      <p class="fussnote" style="margin:0 0 8px 160px">${txt}</p>`).join("")}
+    <div class="hinweis"><b>Lesart:</b> Grün = trägt sich selbst, gelb = braucht Begründung. Effektiverlös = tatsächlicher Erlös je Besucher nach Abo-/Ermäßigungs-Verwässerung. Diese Zahlen sind die verlässlichste Marktforschung, die es für Singen gibt – es sind eure eigenen Kassen-Istwerte.</div>
+    <h3>Kaufkraft und Erreichbarkeit nach Zielgruppen (strategische Einschätzung)</h3>
+    ${zielgruppen.map(([z,rolle,txt])=>`<div class="akarte"><div class="akopf"><b style="font-size:15px">${z}</b><span style="flex:1"></span><span class="rolle">${rolle.toUpperCase()}</span></div><div class="atext">${txt}</div></div>`).join("")}
+    <h3>Konkurrenzsituation im Einzugsgebiet</h3>
+    <table><tr><th>Haus / Ort</th><th>Entfernung</th><th>Schwerpunkt</th><th>Überschneidung</th></tr>
+      ${konkurrenz.map(([h,d,sp,ue])=>`<tr><td><b>${h}</b></td><td>${d}</td><td>${sp}</td>
+      <td><span class="pille ${ue==="hoch"?"sabgesagt":ue==="mittel"?"sangefragt":ue==="niedrig"?"sgebucht":"sIdee"}" style="text-decoration:none">${ue}</span></td></tr>`).join("")}
+    </table>
+    <p class="fussnote">Einschätzung auf Basis der öffentlichen Programmprofile – keine Erhebung. „Strukturell" = nicht direkt vergleichbar, wirkt aber als dauerhafter Publikums-Sog.</p>
+    <h3>Was daraus folgt</h3>
+    <div class="hinweis"><b>1.</b> Kindertheater ist euer nachweislich stärkstes Genre – ausbauen (Zweitvorstellungen, Schulnetz), nicht nur pflegen. <b>2.</b> Schauspiel trägt sich nur mit Marke oder Star – jede Schauspiel-Position ohne beides ist ein kalkulierter Zuschuss. <b>3.</b> Die Klassik-Nische nicht intern verdoppeln: zwei Nischenformate am selben Abend (18.03.) kannibalisieren sich gegenseitig. <b>4.</b> Tuttlingen, Radolfzell und Schaffhausen sind die realen Wettbewerber um dasselbe Gastspiel-Publikum – Exklusivfenster bei Agenturen gehören deshalb in jede Verhandlung. <b>5.</b> Die Schweiz ist keine Selbstverständlichkeit, sondern ein Premium-Kanal, der nur bei Star-Anlässen aktiviert werden kann – dann aber mit überdurchschnittlichen Preisen. <b>6.</b> Das größte ungenutzte Potenzial sind Berufstätige 30–55: erlebnisorientiert, kaufkräftig, nur über Social und Formate erreichbar – nicht über das Abo-System.</div>`;
 }
 
 /* ================= DIALOG ================= */
