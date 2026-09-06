@@ -91,6 +91,52 @@
   .preiszeile input{width:56px;padding:3px 4px;font-size:14px;border:1px dashed var(--rand);border-radius:6px;}
   .ergGewinn{color:var(--gruen);font-weight:700;} .ergVerlust{color:var(--rot);font-weight:700;}
   @media print{ nav,header .werkzeuge,button.aktion{display:none!important;} body{background:#fff;} }
+
+  /* ================= ERWEITERUNGEN v4 (on-top) ================= */
+  .gpille{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .bneutral{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:700;
+    background:#e6effc;color:#14448f;border:1px solid #9dbcf0;white-space:nowrap;}
+  .kaltag.kaldoppelt{outline:3px solid var(--rot);background:var(--rot-hell);}
+  .kaldoppeltMarke{display:block;font-size:10px;font-weight:800;color:var(--rot);letter-spacing:.4px;margin-top:2px;}
+  .ampel{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .ampelGruen{background:var(--gruen);} .ampelGelb{background:var(--gelb);} .ampelRot{background:var(--rot);}
+  .kalkTab td.zahl,.kalkTab th.zahl{text-align:right;white-space:nowrap;}
+  .kalkTab tr.summe td{border-top:2px solid var(--text);font-weight:700;background:var(--akzent-hell);}
+  .kalkTab tr.ergebnis td{background:var(--text);color:var(--gold);font-weight:700;}
+  .parambox{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--rand);
+    border-radius:10px;padding:12px 16px;margin-bottom:14px;}
+  .parambox .feld{margin-bottom:0;}
+  .parambox input{width:120px;}
+  .monatszeile{display:flex;align-items:center;gap:10px;margin:4px 0;}
+  .monatszeile .mname{width:110px;font-size:14px;}
+  .monatspunkte{flex:1;display:flex;gap:3px;flex-wrap:wrap;}
+  .mpunkt{width:16px;height:16px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  /* ---- Druckansicht Programmzettel ---- */
+  #druck{display:none;}
+  #druck .dkTitel{font-size:23px;font-weight:700;margin:0;}
+  #druck .dkSub{font-size:13px;color:#555;margin:2px 0 14px;}
+  #druck .dkLegende{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid #222;}
+  #druck .dkMonat{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#222;
+    border-bottom:1px solid #bbb;margin:16px 0 6px;padding-bottom:3px;}
+  #druck .dkZeile{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;
+    break-inside:avoid;page-break-inside:avoid;}
+  #druck .dkBalken{width:7px;align-self:stretch;min-height:30px;border-radius:3px;flex:none;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #druck .dkDatum{width:118px;flex:none;font-size:13px;line-height:1.35;}
+  #druck .dkDatum b{display:block;font-size:15px;}
+  #druck .dkMitte{flex:1;}
+  #druck .dkTitelZ{font-size:16px;font-weight:700;line-height:1.25;}
+  #druck .dkMeta{font-size:12px;color:#555;margin-top:2px;}
+  #druck .dkRechts{width:150px;flex:none;text-align:right;}
+  #druck .dkFuss{margin-top:18px;padding-top:8px;border-top:1px solid #bbb;font-size:11px;color:#666;}
+  @media print{
+    body.druckt > *:not(#druck){display:none!important;}
+    body.druckt #druck{display:block!important;}
+    @page{size:A4 portrait;margin:14mm 12mm;}
+  }
 </style>
 </head>
 <body>
@@ -100,6 +146,7 @@
   <span style="flex:1"></span>
   <span class="werkzeuge" style="display:flex;align-items:center;gap:10px;">
     <span id="syncStatus" style="font-size:13px;color:#cfd4da;white-space:nowrap;">● lade…</span>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="druckDialogOeffnen()" title="Programmliste als PDF ausgeben">Programm als PDF</button>
     <button class="aktion sekundaer klein" style="background:#fff" onclick="datenExport()">Daten sichern</button>
     <button class="aktion sekundaer klein" style="background:#fff" onclick="document.getElementById('importDatei').click()">Daten laden</button>
     <input type="file" id="importDatei" accept=".json" style="display:none" onchange="datenImport(this)">
@@ -113,6 +160,7 @@
   <button data-tab="kalender" onclick="zeigeTab('kalender')">Kalender</button>
   <button data-tab="auswertung" onclick="zeigeTab('auswertung')">Auswertung</button>
   <button data-tab="analyse" onclick="zeigeTab('analyse')">Analyse</button>
+  <button data-tab="kalkulation" onclick="zeigeTab('kalkulation')">Kalkulation</button>
   <button data-tab="markt" onclick="zeigeTab('markt')">Marktforschung</button>
 </nav>
 <main id="inhalt"></main>
@@ -142,6 +190,13 @@
     </div>
     <div class="fussnote" id="vdSumme" style="margin-bottom:10px;"></div>
     <div class="feld"><label>Anmerkung</label><input type="text" id="vdAnmerkung"></div>
+    <div class="feld" style="background:#f4f7fd;border:1px solid #cfdcf5;border-radius:8px;padding:10px 12px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="vdBudgetneutral" style="width:auto;margin:0;"> Budgetneutral stellen
+      </label>
+      <div class="fussnote" style="margin-top:4px;">Die Veranstaltung bleibt mit ihrem Status sichtbar (z.&nbsp;B. gebucht) und behält Gage und Nebenkosten,
+      wird aber nicht gegen das Saisonbudget gerechnet – für Positionen, die aus Fremdmitteln, Kooperationen oder anderen Töpfen gedeckt sind.</div>
+    </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
       <button class="aktion sekundaer" id="vdLoeschen" onclick="vaLoeschen()">Löschen</button>
       <button class="aktion" onclick="vaSpeichern()">Speichern</button>
@@ -149,9 +204,41 @@
   </div>
 </dialog>
 
+<dialog id="druckDialog">
+  <div class="dkopf"><h3>Programm als PDF</h3><button onclick="document.getElementById('druckDialog').close()">×</button></div>
+  <div class="dinhalt">
+    <div class="feld"><label>Welche Produktionen sollen auf die Liste?</label>
+      <select id="drUmfang">
+        <option value="gebucht">nur gebuchte Produktionen (verbindlicher Spielplan)</option>
+        <option value="fix" selected>gebucht und optioniert (Planungsstand)</option>
+        <option value="alle">alles außer abgesagt (Arbeitsstand)</option>
+      </select>
+    </div>
+    <div class="feld"><label>Überschrift</label><input type="text" id="drTitel"></div>
+    <div class="feld"><label>Zusatzzeile (optional)</label><input type="text" id="drUnter" placeholder="z. B. Stand 03.09.2026 · interner Planungsstand"></div>
+    <div class="feld"><label>Zusätzlich anzeigen</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:14px;">
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drStatus" style="width:auto" checked> Status</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drAgentur" style="width:auto"> Agentur / Tournee</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drAnmerkung" style="width:auto"> Anmerkungen</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drPreise" style="width:auto"> Preisempfehlung K1</label>
+      </div>
+    </div>
+    <div class="hinweis">Es öffnet sich der Druckdialog des Browsers. Dort als Ziel <b>„Als PDF speichern"</b> wählen.
+      Damit die Genre-Farben mitgedruckt werden, im Druckdialog unter „Weitere Einstellungen" den Haken bei
+      <b>„Hintergrundgrafiken"</b> setzen.</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="aktion sekundaer" onclick="document.getElementById('druckDialog').close()">Abbrechen</button>
+      <button class="aktion" onclick="druckStarten()">PDF erzeugen</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="druck"></div>
+
 <script>
 /* ================= STAMMDATEN ================= */
-const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Kindertheater","Sonstiges"];
+const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Lesekonzert","Kindertheater","Sonstiges"];
 const STATI = ["gebucht","optioniert","angefragt","Idee","abgesagt"];
 const NK_ARTEN = [["tantiemen","Tantiemen"],["transfer","Transfer"],["uebernachtung","Übernachtung"],["catering","Catering"],["gema","Gema"],["sozialkasse","Sozialkasse"],["sonderabgabe","Sonderabgabe"]];
 const nkLeer = () => ({tantiemen:0,transfer:0,uebernachtung:0,catering:0,gema:0,sozialkasse:0,sonderabgabe:0});
@@ -227,9 +314,15 @@ function migriere(){
     NK_ARTEN.forEach(([k])=>{ if(v.nk[k]===undefined) v.nk[k]=0; });
     if(v.neben!==undefined){ v.nkAlt = (+v.neben||0) + (+v.nkAlt||0); delete v.neben; }
     if(v.nkAlt===undefined) v.nkAlt = 0;
+    if(v.budgetneutral===undefined) v.budgetneutral = false;   /* v4 */
   });
   if(!daten.naechsteVid) daten.naechsteVid = daten.veranstaltungen.reduce((m,v)=>Math.max(m, v.vid||0), 0) + 1;
   if(!daten.analyse) daten.analyse = {};
+  /* v4: Hausparameter für die DB1-Kalkulation */
+  if(!daten.kalk) daten.kalk = {};
+  if(daten.kalk.ust===undefined) daten.kalk.ust = 7;
+  if(daten.kalk.vvk===undefined) daten.kalk.vvk = 10;
+  if(daten.kalk.deckungsbedarf===undefined) daten.kalk.deckungsbedarf = 0;
 }
 migriere();
 
@@ -478,8 +571,40 @@ const datumDE = iso => { if(!iso) return "–"; const [j,m,t] = iso.split("-"); 
 const nkSumme = v => NK_ARTEN.reduce((a,[k])=>a+(+v.nk[k]||0),0) + (+v.nkAlt||0);
 const gesamt = v => (+v.gage||0) + nkSumme(v);
 const zaehltBudget = v => v.status !== "abgesagt";
+/* v4: budgetwirksam = nicht abgesagt UND nicht budgetneutral gestellt */
+const budgetwirksam = v => v.status !== "abgesagt" && !v.budgetneutral;
+const neutralSumme = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).reduce((a,v)=>a+gesamt(v),0);
+const neutralAnzahl = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).length;
+const WOCHENTAGE = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const wochentag = iso => { if(!iso) return ""; const d = new Date(iso+"T12:00:00"); return isNaN(d)?"":WOCHENTAGE[d.getDay()]; };
+/* v4: Farbkennung je Sparte – für Programmzettel, Kalender-Legende und Saisonverlauf */
+const GENRE_FARBEN = {
+  "Schauspiel":"#7e3167", "Komödie":"#c2410c", "Musik/Show":"#1d4ed8", "Symphoniekonzert":"#0f766e",
+  "Kammerkonzert":"#6d28d9", "Lesekonzert":"#a16207", "Kindertheater":"#15803d", "Sonstiges":"#57534e"
+};
+const genreFarbe = s => GENRE_FARBEN[s] || "#57534e";
+/* v4: Ist-Auslastung je Genre 25/26 (identisch mit den Werten im Reiter Marktforschung) */
+const GENRE_IST = {"Kindertheater":90, "Komödie":67, "Musik/Show":65, "Symphoniekonzert":63, "Kammerkonzert":57, "Schauspiel":56, "Lesekonzert":56, "Sonstiges":60};
+/* v5: Sparten ohne eigene Ist-Historie im Haus – der Vergleichswert ist eine Näherung, keine Messung */
+const GENRE_IST_NAEHERUNG = ["Lesekonzert","Sonstiges"];
+/* v5: Startannahmen für neue Sparten, die es 25/26 noch nicht gab.
+   Greift nur, wenn für eine Produktion keine Einzelvorgabe existiert. */
+const SPARTEN_VORGABE = {
+  "Lesekonzert": {preise:[34,29,24,19], plaetze:550, auslastung:55, faktor:0.80, rolle:"IMAGETREIBER",
+    text:"Neues Lesekonzert – Text und Live-Musik an einem Abend. Startannahmen: 550 Plätze eingerichtet, 55 % Auslastung, Erlösfaktor 0,80 (weniger Abo-Verwässerung als in den Ringen, weil das Format überwiegend im Freiverkauf läuft). Zielgruppe 40+, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Werte bitte an der konkreten Produktion nachziehen."}
+};
+/* v4: echte Doppelbelegung = mehr als eine GEBUCHTE Produktion am selben Tag.
+   Mehrere Ideen/Anfragen/Optionen am selben Tag sind Planung und deshalb erlaubt. */
+function doppelbelegungen(){
+  const tage = {};
+  daten.veranstaltungen.filter(v=>v.status==="gebucht" && v.datum).forEach(v=>{ (tage[v.datum]=tage[v.datum]||[]).push(v); });
+  return Object.entries(tage).filter(([d,l])=>l.length>1).sort();
+}
+function gebuchtAmTag(datum, ausserVid){
+  return daten.veranstaltungen.filter(v=>v.status==="gebucht" && v.datum===datum && v.vid!==ausserVid);
+}
 function gesamtBudget(){ return (+daten.budgetJahr1||0)+(+daten.budgetJahr2||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
-function verplant(){ return daten.veranstaltungen.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0); }
+function verplant(){ return daten.veranstaltungen.filter(budgetwirksam).reduce((a,v)=>a+gesamt(v),0); }
 function statusKlasse(s){ return s ? "s"+s : "sohne"; }
 function statusText(s){ return s || "ohne Status"; }
 function sortiert(){ return daten.veranstaltungen.slice().sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")); }
@@ -488,10 +613,18 @@ function warnungen(){
   const w = [];
   const frei = gesamtBudget() - verplant();
   if(frei < 0) w.push({art:"rot", text:"Budget überzogen um <b>"+euro(-frei)+"</b> – Positionen absagen, verhandeln oder Budget erhöhen."});
+  /* v4: harte Doppelbelegung zuerst – der Saal kann nur einmal belegt werden */
+  const dopp = doppelbelegungen();
+  const doppTage = dopp.map(([d])=>d);
+  dopp.forEach(([d,l])=>{
+    w.push({art:"rot", text:"DOPPELBELEGUNG <b>"+datumDE(d)+"</b> ("+wochentag(d)+"): "+l.length+" gebuchte Produktionen am selben Tag – "
+      + l.map(v=>"<b>"+v.titel+"</b>").join(" und ")
+      + ". Der Saal kann nur einmal belegt werden: eine der beiden verlegen oder auf „optioniert“ zurückstufen."});
+  });
   const tage = {};
   daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.datum).forEach(v=>{ (tage[v.datum]=tage[v.datum]||[]).push(v); });
-  Object.entries(tage).filter(([d,l])=>l.length>1).sort().forEach(([d,l])=>{
-    w.push({art:"gelb", text:"<b>"+datumDE(d)+":</b> "+l.length+" Veranstaltungen am selben Tag ("+l.map(v=>v.titel).join(", ")+") – Überschneidung prüfen."});
+  Object.entries(tage).filter(([d,l])=>l.length>1 && doppTage.indexOf(d)===-1).sort().forEach(([d,l])=>{
+    w.push({art:"gelb", text:"<b>"+datumDE(d)+":</b> "+l.length+" Veranstaltungen am selben Tag ("+l.map(v=>v.titel).join(", ")+") – Mehrfachplanung, noch keine Doppelbelegung. Vor dem Buchen entscheiden."});
   });
   const ohneStatus = daten.veranstaltungen.filter(v=>!v.status);
   if(ohneStatus.length>0) w.push({art:"gelb", text:ohneStatus.length+" Veranstaltung(en) ohne Status: "+ohneStatus.map(v=>v.titel).join(", ")+"."});
@@ -512,7 +645,7 @@ let aktuellerTab = "uebersicht";
 function zeigeTab(tab){
   aktuellerTab = tab;
   document.querySelectorAll("#hauptnav button").forEach(b=>b.classList.toggle("aktiv", b.dataset.tab===tab));
-  ({uebersicht:zeigeUebersicht, plan:zeigePlan, fix:zeigeFix, kalender:zeigeKalender, auswertung:zeigeAuswertung, analyse:zeigeAnalyse, markt:zeigeMarkt})[tab]();
+  ({uebersicht:zeigeUebersicht, plan:zeigePlan, fix:zeigeFix, kalender:zeigeKalender, auswertung:zeigeAuswertung, analyse:zeigeAnalyse, kalkulation:zeigeKalkulation, markt:zeigeMarkt})[tab]();
   window.scrollTo(0,0);
 }
 function budgetFeld(feld, wert){
@@ -560,6 +693,7 @@ function zeigeUebersicht(){
       <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison ${daten.saisonAktuell}</div></div>
       <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant (ohne „abgesagt") · ${anzahlAktiv} Veranstaltungen</div></div>
       <div class="karte" style="${frei<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert" style="${frei<0?"color:var(--rot)":""}">${euro(frei)}</div><div class="label">${frei<0?"BUDGET ÜBERZOGEN":"Noch freies Budget"}</div></div>
+      ${neutralAnzahl()>0?`<div class="karte" style="border-color:#9dbcf0;background:#f4f7fd;"><div class="wert" style="color:#14448f">${euro(neutralSumme())}</div><div class="label">davon budgetneutral gestellt · ${neutralAnzahl()} Veranstaltung(en) – nicht in „verplant" enthalten</div></div>`:""}
     </div>
     <h3>Warnungen</h3>
     ${warnungenHTML()}
@@ -582,7 +716,7 @@ function zeigeUebersicht(){
     ${nkPauschal>0?`<div class="balkenzeile"><div class="bname" style="color:var(--gelb)">Pauschale (alt)</div>
       <div class="balken"><div style="width:${Math.round(nkPauschal/maxNk*100)}%;background:var(--gelb)"></div></div>
       <div class="bwert">${euro(nkPauschal)}</div></div>`:""}
-    <p class="fussnote">Budgetfelder direkt anklicken und ändern – alles andere rechnet automatisch. Datenstand wird zentral gespeichert und gilt für das ganze Team.</p>`;
+    <p class="fussnote">Budgetfelder direkt anklicken und ändern – alles andere rechnet automatisch. Datenstand wird zentral gespeichert und gilt für das ganze Team.${neutralAnzahl()>0?" Die Balken nach Sparte und Nebenkostenart zeigen weiterhin <b>alle</b> Kosten, auch die budgetneutral gestellten – nur „verplant“ und „freies Budget“ lassen sie außen vor.":""}</p>`;
 }
 
 function zeigePlan(filterStatus, filterSparte){
@@ -591,7 +725,9 @@ function zeigePlan(filterStatus, filterSparte){
   if(selStatus==="ohne") liste = liste.filter(v=>!v.status);
   else if(selStatus) liste = liste.filter(v=>v.status===selStatus);
   if(selSparte) liste = liste.filter(v=>v.sparte===selSparte);
-  const summe = liste.filter(zaehltBudget).reduce((a,v)=>a+gesamt(v),0);
+  const summe = liste.filter(budgetwirksam).reduce((a,v)=>a+gesamt(v),0);
+  const summeNeutral = liste.filter(v=>v.status!=="abgesagt" && v.budgetneutral).reduce((a,v)=>a+gesamt(v),0);
+  const doppTage = doppelbelegungen().map(([d])=>d);
   let zeilen = "", letztesJahr = null;
   liste.forEach(v=>{
     const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
@@ -600,9 +736,9 @@ function zeigePlan(filterStatus, filterSparte){
       letztesJahr = jahr;
     }
     zeilen += `<tr class="klickbar ${v.status==="abgesagt"?"zAbgesagt":""}" onclick="vaDialogOeffnen(${v.vid})">
-      <td>${datumDE(v.datum)}</td>
-      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
-      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
+      <td>${datumDE(v.datum)}${doppTage.indexOf(v.datum)>-1 && v.status==="gebucht"?'<div class="fussnote" style="color:var(--rot);font-weight:700">⚠ doppelt belegt</div>':""}</td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></td><td>${v.agentur||""}</td>
       <td><span class="pille ${statusKlasse(v.status)}">${statusText(v.status)}</span></td>
       <td>${euro(+v.gage||0)}</td>
       <td>${euro(nkSumme(v))}${(+v.nkAlt||0)>0?'<div class="fussnote">davon Pauschale: '+euro(+v.nkAlt)+'</div>':""}</td>
@@ -622,7 +758,8 @@ function zeigePlan(filterStatus, filterSparte){
         <option value="">Alle Sparten</option>
         ${SPARTEN.map(s=>`<option ${selSparte===s?"selected":""}>${s}</option>`).join("")}
       </select>
-      <span class="fussnote">${liste.length} Veranstaltungen · budgetwirksam ${euro(summe)} · Zeile anklicken zum Bearbeiten</span>
+      <button class="aktion sekundaer" onclick="druckDialogOeffnen()">Programm als PDF</button>
+      <span class="fussnote">${liste.length} Veranstaltungen · budgetwirksam ${euro(summe)}${summeNeutral>0?" · budgetneutral "+euro(summeNeutral):""} · Zeile anklicken zum Bearbeiten</span>
     </div>
     <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Status</th><th>Gage</th><th>Nebenkosten</th><th>Gesamt</th></tr>
     ${zeilen}
@@ -632,6 +769,7 @@ function zeigePlan(filterStatus, filterSparte){
 function zeigeFix(){
   const liste = sortiert().filter(v=>v.status==="gebucht");
   const summe = liste.reduce((a,v)=>a+gesamt(v),0);
+  const doppTageFix = doppelbelegungen().map(([d])=>d);
   let zeilen = "", letztesJahr = null;
   liste.forEach(v=>{
     const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
@@ -640,16 +778,16 @@ function zeigeFix(){
       letztesJahr = jahr;
     }
     zeilen += `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
-      <td>${datumDE(v.datum)}</td>
-      <td><b>${v.titel||"–"}</b>${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
-      <td>${v.sparte||""}</td><td>${v.agentur||""}</td>
+      <td>${datumDE(v.datum)} <span class="fussnote">${wochentag(v.datum)}</span>${doppTageFix.indexOf(v.datum)>-1?'<div class="fussnote" style="color:var(--rot);font-weight:700">⚠ doppelt belegt</div>':""}</td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></td><td>${v.agentur||""}</td>
       <td>${euro(+v.gage||0)}</td><td><b>${euro(gesamt(v))}</b></td></tr>`;
   });
   document.getElementById("inhalt").innerHTML = `
     <h2>Spielplan ${daten.saisonAktuell} – fix gebuchte Produktionen</h2>
     ${liste.length===0
       ? '<div class="hinweis">Noch keine gebuchten Produktionen. Sobald in der <b>Planung</b> eine Produktion auf den Status „gebucht" gestellt wird, erscheint sie automatisch hier.</div>'
-      : `<div class="leiste"><span class="fussnote">${liste.length} Produktion(en) fix · Gesamtkosten ${euro(summe)} · Zeile anklicken zum Bearbeiten</span></div>
+      : `<div class="leiste"><button class="aktion sekundaer" onclick="druckDialogOeffnen()">Programm als PDF</button><span class="fussnote">${liste.length} Produktion(en) fix · Gesamtkosten ${euro(summe)} · Zeile anklicken zum Bearbeiten</span></div>
     <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Gage</th><th>Gesamt</th></tr>
     ${zeilen}
     </table>`}
@@ -678,9 +816,11 @@ function zeigeKalender(){
     const heutigen = proTag[iso]||[];
     let inhalt = `<div class="kalnum">${t}</div>`;
     heutigen.forEach(v=>{
-      inhalt += `<div class="kalitem ${statusKlasse(v.status)}" onclick="event.stopPropagation();vaDialogOeffnen(${v.vid})">${v.titel}</div>`;
+      inhalt += `<div class="kalitem ${statusKlasse(v.status)}" style="border-left:4px solid ${genreFarbe(v.sparte)}" onclick="event.stopPropagation();vaDialogOeffnen(${v.vid})">${v.titel}</div>`;
     });
-    const kollision = heutigen.length>1 ? " kalkollision" : "";
+    const gebuchte = heutigen.filter(v=>v.status==="gebucht").length;
+    if(gebuchte>1) inhalt += '<span class="kaldoppeltMarke">⚠ DOPPELT BELEGT</span>';
+    const kollision = gebuchte>1 ? " kaldoppelt" : (heutigen.length>1 ? " kalkollision" : "");
     zellen.push(`<div class="kaltag${iso===heuteIso?" kalheute":""}${kollision}">${inhalt}</div>`);
   }
   const anzahlMonat = daten.veranstaltungen.filter(v=>v.datum && v.datum.slice(0,7)===kalMonat).length;
@@ -697,7 +837,10 @@ function zeigeKalender(){
       ${["Mo","Di","Mi","Do","Fr","Sa","So"].map(w=>`<div class="kalwt">${w}</div>`).join("")}
       ${zellen.join("")}
     </div>
-    <p class="fussnote">Farben nach Status: grün gebucht, magenta optioniert, gelb angefragt, grau Idee. <b>Rot umrandete Tage = mehrere Veranstaltungen am selben Tag.</b> Abgesagte werden nicht angezeigt.</p>`;
+    <p class="fussnote">Füllfarbe nach Status: grün gebucht, magenta optioniert, gelb angefragt, grau Idee. Der farbige Streifen links am Eintrag zeigt die Sparte.
+      <b>Rot ausgefüllte Tage mit Warnhinweis = echte Doppelbelegung, also zwei gebuchte Produktionen an einem Tag.</b>
+      Rot umrandete Tage ohne Hinweis = mehrere Termine in Planung, noch keine Doppelbelegung. Abgesagte werden nicht angezeigt.</p>
+    <div class="leiste" style="margin-top:10px;">${SPARTEN.map(s=>`<span class="gpille" style="background:${genreFarbe(s)}">${s}</span>`).join("")}</div>`;
 }
 function kalNav(delta){
   const [J,M] = kalMonat.split("-").map(Number);
@@ -894,9 +1037,11 @@ function analyseVon(v){
   const vg = vorgabeFuer(v);
   const vorhanden = daten.analyse[v.vid];
   if(!vorhanden || (vg && (vorhanden.av||0) < (vg.av||0))){
+    const sv = SPARTEN_VORGABE[v.sparte];   /* v5: Startwerte je Sparte, falls keine Einzelvorgabe existiert */
     daten.analyse[v.vid] = vg ? JSON.parse(JSON.stringify(vg)) :
-      {score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false, preise:[39,34,28,19], plaetze:838, auslastung:55, faktor:0.75,
-       text:"Neu angelegte Produktion – Analysewerte bitte prüfen und anpassen (Vorbelegung: Standardannahmen)."};
+      Object.assign({score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false, preise:[39,34,28,19], plaetze:838, auslastung:55, faktor:0.75,
+       text:"Neu angelegte Produktion – Analysewerte bitte prüfen und anpassen (Vorbelegung: Standardannahmen)."},
+       sv ? JSON.parse(JSON.stringify(sv)) : {});
   }
   return daten.analyse[v.vid];
 }
@@ -992,6 +1137,8 @@ function zeigeAnalyse(){
       <div><b style="font-size:16px">${k.titel}</b><div class="fussnote">Kandidat · Priorität ${k.prio}</div></div>
       <span style="flex:1"></span><span class="rolle">${k.rolle}</span></div>
       <div class="atext">${k.text}</div></div>`).join("")}
+    ${plausiHTML()}
+    ${saisonverlaufHTML()}
     <h3>Alle Produktionen (${liste.length}) – Score, Rolle, Preise, Wirtschaftlichkeit</h3>
     <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Alle Annahmen (Plätze, Auslastung, Preise, Erlösfaktor) sind direkt editierbar – die Bilanz oben rechnet sofort mit. Der Erlösfaktor bildet ab, dass Abos und Ermäßigungen den Kassenpreis verwässern (kalibriert an euren 25/26-Istwerten).</p>
     ${karten}`;
@@ -1045,7 +1192,9 @@ function zeigeMarkt(){
       <div class="balken"><div style="width:${a}%;${a>=75?"background:var(--gruen)":a<60?"background:var(--gelb)":""}"></div></div>
       <div class="bwert">${a} % · ${String(e).replace(".",",")} €/Ticket</div></div>
       <p class="fussnote" style="margin:0 0 8px 160px">${txt}</p>`).join("")}
-    <div class="hinweis"><b>Lesart:</b> Grün = trägt sich selbst, gelb = braucht Begründung. Effektiverlös = tatsächlicher Erlös je Besucher nach Abo-/Ermäßigungs-Verwässerung. Diese Zahlen sind die verlässlichste Marktforschung, die es für Singen gibt – es sind eure eigenen Kassen-Istwerte.</div>
+    <div class="hinweis"><b>Lesart:</b> Grün = trägt sich selbst, gelb = braucht Begründung. Effektiverlös = tatsächlicher Erlös je Besucher nach Abo-/Ermäßigungs-Verwässerung. Diese Zahlen sind die verlässlichste Marktforschung, die es für Singen gibt – es sind eure eigenen Kassen-Istwerte.
+      Für das <b>Lesekonzert</b> fehlt diese Grundlage noch: Das Format gab es 25/26 nicht, die Plausibilitätsprüfung in der Analyse rechnet deshalb mit 56 % als Näherung
+      aus dem literarisch-sprechtheatralen Segment. Nach dem ersten Abend gehört dort der echte Wert hinein.</div>
     <h3>Kaufkraft und Erreichbarkeit nach Zielgruppen (strategische Einschätzung)</h3>
     ${zielgruppen.map(([z,rolle,txt])=>`<div class="akarte"><div class="akopf"><b style="font-size:15px">${z}</b><span style="flex:1"></span><span class="rolle">${rolle.toUpperCase()}</span></div><div class="atext">${txt}</div></div>`).join("")}
     <h3>Konkurrenzsituation im Einzugsgebiet</h3>
@@ -1057,6 +1206,232 @@ function zeigeMarkt(){
     <h3>Was daraus folgt</h3>
     <div class="hinweis"><b>1.</b> Kindertheater ist euer nachweislich stärkstes Genre – ausbauen (Zweitvorstellungen, Schulnetz), nicht nur pflegen. <b>2.</b> Schauspiel trägt sich nur mit Marke oder Star – jede Schauspiel-Position ohne beides ist ein kalkulierter Zuschuss. <b>3.</b> Die Klassik-Nische nicht intern verdoppeln: zwei Nischenformate am selben Abend (18.03.) kannibalisieren sich gegenseitig. <b>4.</b> Tuttlingen, Radolfzell und Schaffhausen sind die realen Wettbewerber um dasselbe Gastspiel-Publikum – Exklusivfenster bei Agenturen gehören deshalb in jede Verhandlung. <b>5.</b> Die Schweiz ist keine Selbstverständlichkeit, sondern ein Premium-Kanal, der nur bei Star-Anlässen aktiviert werden kann – dann aber mit überdurchschnittlichen Preisen. <b>6.</b> Das größte ungenutzte Potenzial sind Berufstätige 30–55: erlebnisorientiert, kaufkräftig, nur über Social und Formate erreichbar – nicht über das Abo-System.</div>`;
 }
+
+/* ================= v4: DB1-KALKULATION JE PRODUKTION =================
+   Hausregel Stadthalle Singen: In den DB1 gehen ausschließlich produktionsspezifische
+   Fremdkosten (Gage/Beteiligung, Tantiemen, Transfer, Übernachtung, Catering, GEMA,
+   Sozialkasse, Sonderabgaben). Marketing, Aufbau/erweiterte Bestuhlung sowie Licht & Ton
+   sind NICHT enthalten – sie laufen über Haushalt und Hausinfrastruktur und werden auf
+   Saisonebene in einer Summe als Deckungsbedarf gegengerechnet.
+   Erlösseite: Bruttopreise (Kartenmix) → abzüglich USt und VVK-/Systemgebühr = Nettoerlös Haus. */
+function db1(v){
+  const a = analyseVon(v);
+  const brutto = a.preise.reduce((s,p,i)=>s+(+p||0)*KAT_MIX[i],0);
+  const effBrutto = brutto * (+a.faktor||0.75);
+  const tickets = Math.round((+a.plaetze||0) * (+a.auslastung||0) / 100);
+  const umsatzBrutto = Math.round(tickets * effBrutto);
+  const ustSatz = +daten.kalk.ust||0, vvkSatz = +daten.kalk.vvk||0;
+  const ust = Math.round(umsatzBrutto * ustSatz/(100+ustSatz));
+  const vvk = Math.round(umsatzBrutto * vvkSatz/100);
+  const netto = umsatzBrutto - ust - vvk;
+  const kosten = gesamt(v);
+  const proTicket = effBrutto * (1 - ustSatz/(100+ustSatz) - vvkSatz/100);
+  const beTickets = proTicket>0 ? Math.ceil(kosten/proTicket) : null;
+  const bePro = (beTickets!==null && (+a.plaetze||0)>0) ? Math.round(beTickets/(+a.plaetze)*100) : null;
+  return {brutto, effBrutto, tickets, umsatzBrutto, ust, vvk, netto, kosten, db1: netto-kosten, proTicket, beTickets, bePro};
+}
+function kalkParam(feld, wert){
+  const z = Math.max(0, +String(wert).replace(",",".")||0);
+  daten.kalk[feld] = z; speichern(); zeigeKalkulation();
+}
+function kalkAendern(vid, feld, wert){
+  const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+  const a = analyseVon(v);
+  a[feld] = Math.max(0, +wert||0);
+  speichern(); zeigeKalkulation();
+}
+function zeigeKalkulation(){
+  const liste = sortiert().filter(zaehltBudget);
+  let sNetto=0, sKosten=0, sDb1=0, sTickets=0, sUst=0, sVvk=0, sBrutto=0;
+  const zeilen = liste.map(v=>{
+    const k = db1(v), a = analyseVon(v);
+    sNetto+=k.netto; sKosten+=k.kosten; sDb1+=k.db1; sTickets+=k.tickets; sUst+=k.ust; sVvk+=k.vvk; sBrutto+=k.umsatzBrutto;
+    const beKlasse = k.bePro===null ? "" : (k.bePro>100 ? "ergVerlust" : (k.bePro>(+a.auslastung||0) ? "plus" : "minus"));
+    return `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}<div class="fussnote">${wochentag(v.datum)}</div></td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}
+        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
+        <span class="pille ${statusKlasse(v.status)}" style="font-size:11px">${statusText(v.status)}</span></div></td>
+      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:74px" value="${a.plaetze}" onchange="kalkAendern(${v.vid},'plaetze',this.value)"></td>
+      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:62px" value="${a.auslastung}" onchange="kalkAendern(${v.vid},'auslastung',this.value)"> %</td>
+      <td class="zahl">${k.tickets}</td>
+      <td class="zahl">${k.proTicket.toFixed(2).replace(".",",")} €</td>
+      <td class="zahl">${euro(k.netto)}</td>
+      <td class="zahl">${euro(k.kosten)}</td>
+      <td class="zahl"><b class="${k.db1>=0?"ergGewinn":"ergVerlust"}">${k.db1>=0?"+":""}${euro(k.db1)}</b></td>
+      <td class="zahl ${beKlasse}">${k.bePro===null?"–":k.bePro+" %"}${k.beTickets!==null?`<div class="fussnote">${k.beTickets} Tickets</div>`:""}</td>
+    </tr>`;
+  }).join("");
+  const deckung = +daten.kalk.deckungsbedarf||0;
+  const ergebnis = sDb1 - deckung;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Kalkulation ${daten.saisonAktuell} – Deckungsbeitrag 1 je Produktion</h2>
+    <div class="hinweis"><b>Was hier gerechnet wird:</b> Vom erwarteten Ticketumsatz gehen Umsatzsteuer und VVK-/Systemgebühr ab –
+      übrig bleibt der Nettoerlös, den das Haus tatsächlich behält. Davon abgezogen werden ausschließlich die
+      <b>produktionsspezifischen Fremdkosten</b> (Gage plus alle erfassten Nebenkosten). Das ergibt den DB1.
+      Nach eurer Hausregel enthält der DB1 <b>kein Marketing, keinen Aufbau bzw. keine erweiterte Bestuhlung und kein Licht &amp; Ton</b> –
+      diese Kosten sind nicht produktionsspezifisch zurechenbar und werden unten in einer Summe als Deckungsbedarf gegengerechnet.</div>
+    <div class="parambox">
+      <div class="feld"><label>Umsatzsteuer auf Tickets</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.ust}" onchange="kalkParam('ust',this.value)"> %</div>
+      <div class="feld"><label>VVK-/Systemgebühr vom Bruttopreis</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.vvk}" onchange="kalkParam('vvk',this.value)"> %</div>
+      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" value="${deckung}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
+      <div class="fussnote" style="flex:1;min-width:220px;">Beide Sätze in Prozent. Hausvorgabe: 7&nbsp;% USt, 10&nbsp;% VVK-/Systemgebühr.
+        Der Deckungsbedarf ist die Summe aus Marketing, Aufbau/Bestuhlung und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
+    </div>
+    <div class="karten">
+      <div class="karte"><div class="wert">${euro(sNetto)}</div><div class="label">Nettoerlös Tickets · brutto ${euro(sBrutto)}, davon ${euro(sUst)} USt und ${euro(sVvk)} Gebühr</div></div>
+      <div class="karte"><div class="wert">${euro(sKosten)}</div><div class="label">Produktionsspezifische Fremdkosten (Gage + Nebenkosten)</div></div>
+      <div class="karte" style="${sDb1<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${sDb1>=0?"ergGewinn":"ergVerlust"}">${sDb1>=0?"+":""}${euro(sDb1)}</div><div class="label">Summe DB1 aller Produktionen</div></div>
+      <div class="karte" style="${ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${ergebnis>=0?"ergGewinn":"ergVerlust"}">${ergebnis>=0?"+":""}${euro(ergebnis)}</div><div class="label">Nach Abzug Deckungsbedarf (${euro(deckung)})</div></div>
+    </div>
+    ${deckung===0?'<div class="warnbox">Der <b>Deckungsbedarf steht auf 0</b>. Solange dort nichts eingetragen ist, zeigt die Summe nur die Produktionsebene – Marketing, Aufbau und Licht &amp; Ton fehlen komplett in der Rechnung. Trag den Saisonwert oben ein, dann stimmt das Gesamtbild.</div>':""}
+    <table class="kalkTab">
+      <tr><th>Datum</th><th>Produktion</th><th class="zahl">Plätze</th><th class="zahl">Auslastung</th><th class="zahl">Tickets</th>
+        <th class="zahl">Ø netto/Ticket</th><th class="zahl">Nettoerlös</th><th class="zahl">Fremdkosten</th><th class="zahl">DB1</th><th class="zahl">Break-even</th></tr>
+      ${zeilen}
+      <tr class="summe"><td colspan="4">Summe ${liste.length} Produktionen</td>
+        <td class="zahl">${sTickets}</td><td class="zahl">–</td><td class="zahl">${euro(sNetto)}</td>
+        <td class="zahl">${euro(sKosten)}</td><td class="zahl">${sDb1>=0?"+":""}${euro(sDb1)}</td><td class="zahl">–</td></tr>
+      <tr class="summe"><td colspan="8">./. Deckungsbedarf Saison (Marketing, Aufbau/Bestuhlung, Licht &amp; Ton)</td>
+        <td class="zahl">− ${euro(deckung)}</td><td class="zahl">–</td></tr>
+      <tr class="ergebnis"><td colspan="8">Ergebnis Saison ${daten.saisonAktuell} nach Deckungsbedarf</td>
+        <td class="zahl">${ergebnis>=0?"+":""}${euro(ergebnis)}</td><td class="zahl">–</td></tr>
+    </table>
+    <p class="fussnote">Plätze und Auslastung sind hier direkt änderbar – es sind dieselben Werte wie im Reiter <b>Analyse</b>, eine Änderung wirkt in beiden Ansichten.
+      Preise, Kartenmix und Erlösfaktor werden in der Analyse gepflegt. Break-even = Auslastung, ab der der DB1 auf null steht.
+      Grün eingefärbte Break-even-Werte liegen unter der angenommenen Auslastung, rote darüber.</p>
+    <div class="warnbox"><b>Eine Einschränkung, die du kennen musst:</b> Der Erlösfaktor stammt aus der Analyse und ist an den
+      tatsächlichen Erlösen je Besucher aus 25/26 kalibriert. Falls diese Istwerte bereits Nettowerte waren, zieht diese Rechnung
+      USt und Gebühr ein zweites Mal ab und rechnet die Saison zu schlecht. Prüf das einmal an einer abgerechneten Produktion gegen –
+      falls es so ist, setzt du die beiden Sätze oben einfach auf 0 und arbeitest weiter mit dem Erlösfaktor allein.</div>`;
+}
+
+/* ================= v4: PLAUSIBILITÄT & SAISONVERLAUF (Ergänzung der Analyse) ================= */
+function istWertFuer(v){
+  if((v.titel||"").toLowerCase().indexOf("neujahr")>-1) return 100;
+  const i = GENRE_IST[v.sparte];
+  return i===undefined ? null : i;
+}
+function plausiHTML(){
+  const liste = sortiert().filter(zaehltBudget);
+  const zeilen = liste.map(v=>{
+    const a = analyseVon(v), ist = istWertFuer(v);
+    if(ist===null) return null;
+    const d = (+a.auslastung||0) - ist;
+    const stufe = d<=0 ? "Gruen" : (d<=10 ? "Gelb" : "Rot");
+    const text = d<=0 ? "liegt auf oder unter dem Genre-Ist – belastbar"
+      : (d<=10 ? "liegt "+d+" Punkte über dem Genre-Ist – vertretbar, wenn ein Grund dafür benannt ist (Marke, Star, Kooperation)"
+               : "liegt "+d+" Punkte über dem Genre-Ist – das trägt nur mit belegbarem Zugpferd: bundesweite Marke, Star, Ausverkaufshistorie. Ohne das ist es eine Wette");
+    return {d, html:`<tr><td><span class="ampel ampel${stufe}"></span><b>${v.titel}</b>
+        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span> ${datumDE(v.datum)}</div></td>
+      <td class="zahl">${a.auslastung} %</td><td class="zahl">${ist} %${GENRE_IST_NAEHERUNG.indexOf(v.sparte)>-1?'<div class="fussnote">Näherung, kein Hausist</div>':""}</td>
+      <td class="zahl ${d>10?"plus":(d<=0?"minus":"")}">${d>0?"+":""}${d}</td>
+      <td>${text}</td></tr>`};
+  }).filter(Boolean).sort((x,y)=>y.d-x.d);
+  const rot = zeilen.filter(z=>z.d>10).length, gelb = zeilen.filter(z=>z.d>0&&z.d<=10).length;
+  return `<h3>Plausibilitätsprüfung der Auslastungsannahmen</h3>
+    <div class="${rot>0?"warnbox":"hinweis"}">Jede angenommene Auslastung wird gegen den <b>tatsächlichen Genre-Durchschnitt des Hauses aus 25/26</b> gehalten.
+      ${rot>0?`<b>${rot} Produktion(en) liegen mehr als 10 Punkte über dem Ist</b> – dort steht die Saisonbilanz auf einer Annahme, die das Haus in diesem Genre noch nie erreicht hat.`:"Keine Annahme liegt mehr als 10 Punkte über dem Ist."}
+      ${gelb>0?` ${gelb} weitere liegen leicht darüber.`:""} Das ist keine Aufforderung, tiefer zu planen – aber jede grüne Zahl über dem Ist braucht ein Argument, das über Optimismus hinausgeht.</div>
+    <table><tr><th>Produktion</th><th class="zahl">Annahme</th><th class="zahl">Genre-Ist 25/26</th><th class="zahl">Δ</th><th>Bewertung</th></tr>
+      ${zeilen.map(z=>z.html).join("")}</table>`;
+}
+function saisonverlaufHTML(){
+  const mit = sortiert().filter(v=>zaehltBudget(v) && v.datum);
+  if(mit.length===0) return "";
+  const monate = [];
+  const erst = mit[0].datum.slice(0,7), letzt = mit[mit.length-1].datum.slice(0,7);
+  let [j,m] = erst.split("-").map(Number);
+  const [jE,mE] = letzt.split("-").map(Number);
+  while(j<jE || (j===jE && m<=mE)){
+    monate.push(String(j)+"-"+String(m).padStart(2,"0"));
+    m++; if(m>12){ m=1; j++; }
+  }
+  const proMonat = {};
+  mit.forEach(v=>{ const k=v.datum.slice(0,7); (proMonat[k]=proMonat[k]||[]).push(v); });
+  const leer = monate.filter(k=>!proMonat[k]);
+  const zeilen = monate.map(k=>{
+    const l = proMonat[k]||[];
+    const name = new Date(+k.slice(0,4), +k.slice(5,7)-1, 1).toLocaleDateString("de-DE",{month:"long",year:"2-digit"});
+    return `<div class="monatszeile"><div class="mname">${name}</div>
+      <div class="monatspunkte">${l.map(v=>`<span class="mpunkt" style="background:${genreFarbe(v.sparte)}" title="${v.titel} – ${v.sparte}"></span>`).join("")}</div>
+      <div class="bwert" style="width:60px">${l.length===0?'<span style="color:var(--rot);font-weight:700">leer</span>':l.length}</div></div>`;
+  }).join("");
+  const proSparte = {};
+  mit.forEach(v=>{ proSparte[v.sparte] = (proSparte[v.sparte]||0)+1; });
+  const gesamtN = mit.length;
+  const balance = SPARTEN.filter(s=>proSparte[s]).map(s=>{
+    const anteil = Math.round(proSparte[s]/gesamtN*100);
+    return `<div class="balkenzeile"><div class="bname">${s}</div>
+      <div class="balken"><div style="width:${anteil}%;background:${genreFarbe(s)}"></div></div>
+      <div class="bwert">${proSparte[s]} Termine · ${anteil} %</div></div>`;
+  }).join("");
+  const fehlend = SPARTEN.filter(s=>!proSparte[s]);
+  return `<h3>Saisonverlauf und Genrebalance</h3>
+    <div class="hinweis">Ein Spielplan ist mehr als eine Summe guter Abende: Er braucht einen gleichmäßigen Puls über die Saison und eine Mischung,
+      in der kein Genre die anderen erdrückt. Jeder Punkt ist ein Termin, die Farbe steht für die Sparte.
+      ${leer.length>0?`<b>${leer.length} Monat(e) ohne jeden Termin</b> – das sind Lücken, in denen das Haus aus der Wahrnehmung des Publikums fällt.`:"Kein Monat der Saison bleibt ohne Termin."}
+      ${fehlend.length>0?` Nicht besetzt: ${fehlend.join(", ")}.`:""}</div>
+    ${zeilen}
+    <h3 style="margin-top:18px;">Verteilung nach Sparte (Anzahl Termine)</h3>
+    ${balance}
+    <p class="fussnote">Die Balken zeigen Termin-Anteile, nicht Kostenanteile – die Kostensicht steht im Reiter Übersicht.
+      Beides auseinanderzuhalten lohnt sich: Kindertheater ist bei den Terminen stark und bei den Kosten schwach, große Gastspiele umgekehrt.</p>`;
+}
+
+/* ================= v4: PROGRAMMZETTEL ALS PDF ================= */
+function druckDialogOeffnen(){
+  const t = document.getElementById("drTitel");
+  if(!t.value) t.value = "Programm Saison " + daten.saisonAktuell;
+  const u = document.getElementById("drUnter");
+  if(!u.value) u.value = "Stand " + datumDE(new Date().toISOString().slice(0,10));
+  document.getElementById("druckDialog").showModal();
+}
+function druckStarten(){
+  const umfang = document.getElementById("drUmfang").value;
+  const zeigStatus = document.getElementById("drStatus").checked;
+  const zeigAgentur = document.getElementById("drAgentur").checked;
+  const zeigAnm = document.getElementById("drAnmerkung").checked;
+  const zeigPreis = document.getElementById("drPreise").checked;
+  let liste = sortiert().filter(v=>v.status!=="abgesagt");
+  if(umfang==="gebucht") liste = liste.filter(v=>v.status==="gebucht");
+  else if(umfang==="fix") liste = liste.filter(v=>v.status==="gebucht"||v.status==="optioniert");
+  if(liste.length===0){ alert("Für diese Auswahl gibt es keine Produktionen."); return; }
+  const benutzteSparten = SPARTEN.filter(s=>liste.some(v=>v.sparte===s));
+  let html = `<h1 class="dkTitel">${document.getElementById("drTitel").value||("Programm Saison "+daten.saisonAktuell)}</h1>
+    <p class="dkSub">${document.getElementById("drUnter").value||""}${document.getElementById("drUnter").value?" · ":""}${liste.length} Termine</p>
+    <div class="dkLegende">${benutzteSparten.map(s=>`<span class="gpille" style="background:${genreFarbe(s)}">${s}</span>`).join("")}</div>`;
+  let letzterMonat = null;
+  liste.forEach(v=>{
+    const monat = v.datum ? v.datum.slice(0,7) : "ohne";
+    if(monat !== letzterMonat){
+      html += `<div class="dkMonat">${v.datum ? new Date(+v.datum.slice(0,4), +v.datum.slice(5,7)-1, 1).toLocaleDateString("de-DE",{month:"long",year:"numeric"}) : "Ohne Datum"}</div>`;
+      letzterMonat = monat;
+    }
+    const a = zeigPreis ? analyseVon(v) : null;
+    html += `<div class="dkZeile">
+      <div class="dkBalken" style="background:${genreFarbe(v.sparte)}"></div>
+      <div class="dkDatum">${v.datum?`<b>${datumDE(v.datum)}</b>${wochentag(v.datum)}`:"Termin offen"}</div>
+      <div class="dkMitte">
+        <div class="dkTitelZ">${v.titel||"–"}</div>
+        ${(zeigAgentur&&v.agentur)||zeigStatus?`<div class="dkMeta">${[zeigAgentur&&v.agentur?v.agentur:"", zeigStatus?statusText(v.status):""].filter(Boolean).join(" · ")}</div>`:""}
+        ${zeigAnm&&v.anmerkung?`<div class="dkMeta">${v.anmerkung}</div>`:""}
+      </div>
+      <div class="dkRechts">
+        <span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
+        ${a?`<div class="dkMeta">ab ${euro(a.preise[a.preise.length-1]||a.preise[0])}</div>`:""}
+      </div>
+    </div>`;
+  });
+  html += `<div class="dkFuss">Kultur- und Tagungsstätten Singen · Stadthalle Singen · erstellt aus dem Spielplan-Tool am ${datumDE(new Date().toISOString().slice(0,10))}.
+    ${umfang==="alle"?"Interner Arbeitsstand – enthält auch Ideen und Anfragen, die noch nicht verbindlich sind.":umfang==="fix"?"Planungsstand – enthält gebuchte und optionierte Produktionen. Optionen sind noch nicht verbindlich.":"Verbindlicher Stand – nur gebuchte Produktionen."}</div>`;
+  document.getElementById("druck").innerHTML = html;
+  document.getElementById("druckDialog").close();
+  document.body.classList.add("druckt");
+  setTimeout(()=>{ window.print(); druckEnde(); }, 60);
+}
+function druckEnde(){ setTimeout(()=>document.body.classList.remove("druckt"), 400); }
+window.addEventListener("afterprint", druckEnde);
 
 /* ================= DIALOG ================= */
 function vaDialogOeffnen(vid){
@@ -1078,6 +1453,7 @@ function vaDialogOeffnen(vid){
     NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = v.nk[k]||0; });
     document.getElementById("vdNkAlt").value = v.nkAlt||0;
     document.getElementById("vdAnmerkung").value = v.anmerkung||"";
+    document.getElementById("vdBudgetneutral").checked = !!v.budgetneutral;
     document.getElementById("vdLoeschen").style.display = "";
   }else{
     document.getElementById("vdTitel").textContent = "Neue Veranstaltung";
@@ -1091,6 +1467,7 @@ function vaDialogOeffnen(vid){
     NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = 0; });
     document.getElementById("vdNkAlt").value = 0;
     document.getElementById("vdAnmerkung").value = "";
+    document.getElementById("vdBudgetneutral").checked = false;
     document.getElementById("vdLoeschen").style.display = "none";
   }
   document.getElementById("vdNkAltFeld").style.display = (v && (+v.nkAlt||0)>0) ? "" : "none";
@@ -1118,9 +1495,21 @@ function vaSpeichern(){
     gage: +document.getElementById("vdGage").value||0,
     nk: nk,
     nkAlt: +document.getElementById("vdNkAlt").value||0,
-    anmerkung: document.getElementById("vdAnmerkung").value
+    anmerkung: document.getElementById("vdAnmerkung").value,
+    budgetneutral: document.getElementById("vdBudgetneutral").checked
   };
   if(!werte.titel){ alert("Bitte einen Titel eintragen."); return; }
+  /* v4: Doppelbelegung abfangen – der Saal kann pro Tag nur einmal belegt werden */
+  if(werte.status==="gebucht" && werte.datum){
+    const andere = gebuchtAmTag(werte.datum, idRoh ? +idRoh : -1);
+    if(andere.length>0){
+      const txt = "DOPPELBELEGUNG am " + datumDE(werte.datum) + " (" + wochentag(werte.datum) + ")\n\n"
+        + "An diesem Tag ist bereits gebucht:\n· " + andere.map(v=>v.titel).join("\n· ")
+        + "\n\nDer Saal kann nur einmal belegt werden. Sinnvoll ist meist: Termin verlegen oder diese Produktion auf „optioniert“ stellen.\n\n"
+        + "Trotzdem als gebucht speichern? (z. B. bei einer zweiten Vorstellung am selben Tag)";
+      if(!confirm(txt)) return;
+    }
+  }
   if(idRoh){
     const v = daten.veranstaltungen.find(x=>x.vid===+idRoh);
     Object.assign(v, werte);
