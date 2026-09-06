@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KTS Singen – Spielplan 2027/28</title>
+<style>
+  :root{
+    --akzent:#7e3167; --akzent-hell:#f4eef3; --gruen:#2e7d32; --gruen-hell:#e6f3e6;
+    --gelb:#b26a00; --gelb-hell:#fdf3e0; --rot:#b3261e; --rot-hell:#fbeaea;
+    --grau:#6e6870; --grau-hell:#ece6eb; --rand:#d9d2dc; --text:#1d1a1e;
+    --gold:#ffcc66;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;margin:0;background:#fbf9fa;color:var(--text);font-size:16px;}
+  header{background:var(--text);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--gold);}
+  header h1{font-size:20px;margin:0;font-weight:600;}
+  header .saison{color:var(--gold);font-size:14px;}
+  nav{display:flex;background:#fff;border-bottom:2px solid var(--rand);padding:0 12px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+  nav button{border:none;background:none;padding:14px 18px;font-size:16px;cursor:pointer;color:var(--grau);border-bottom:3px solid transparent;font-weight:500;}
+  nav button.aktiv{color:var(--akzent);border-bottom-color:var(--akzent);font-weight:700;}
+  main{padding:20px;max-width:1250px;margin:0 auto;}
+  h2{font-size:20px;margin:8px 0 14px;}
+  h3{font-size:16px;margin:16px 0 8px;}
+  .karten{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+  .karte{background:#fff;border:1px solid var(--rand);border-radius:10px;padding:14px 16px;}
+  .karte .wert{font-size:26px;font-weight:700;}
+  .karte .label{font-size:13px;color:var(--grau);margin-top:2px;}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--rand);border-radius:8px;overflow:hidden;}
+  th{background:var(--akzent-hell);text-align:left;padding:10px;font-size:13px;color:var(--akzent);text-transform:uppercase;letter-spacing:.3px;}
+  td{padding:10px;border-top:1px solid var(--rand);font-size:15px;vertical-align:top;}
+  tr.klickbar{cursor:pointer;}
+  tr.klickbar:hover{background:var(--akzent-hell);}
+  tr.jahrtrenner td{background:var(--text);color:var(--gold);font-weight:700;font-size:14px;letter-spacing:1px;padding:7px 10px;border-top:none;}
+  .pille{display:inline-block;padding:3px 10px;border-radius:12px;font-size:13px;font-weight:600;white-space:nowrap;}
+  .sgebucht{background:var(--gruen-hell);color:var(--gruen);}
+  .soptioniert{background:var(--akzent-hell);color:var(--akzent);}
+  .sangefragt{background:var(--gelb-hell);color:var(--gelb);}
+  .sIdee{background:var(--grau-hell);color:var(--grau);}
+  .sabgesagt{background:var(--rot-hell);color:var(--rot);text-decoration:line-through;}
+  .sohne{background:var(--gelb-hell);color:var(--gelb);border:1px dashed var(--gelb);}
+  tr.zAbgesagt td{background:var(--grau-hell);opacity:.55;}
+  button.aktion{background:var(--akzent);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer;font-weight:600;}
+  button.aktion.sekundaer{background:#fff;color:var(--akzent);border:2px solid var(--akzent);}
+  button.aktion.klein{padding:6px 10px;font-size:13px;}
+  button.aktion:hover{opacity:.9;}
+  .leiste{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  select,input[type=text],input[type=number],input[type=date],textarea{padding:9px;border:1px solid var(--rand);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;}
+  dialog{border:none;border-radius:12px;padding:0;max-width:680px;width:94%;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+  dialog::backdrop{background:rgba(0,0,0,.35);}
+  .dkopf{background:var(--akzent);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+  .dkopf h3{margin:0;font-size:17px;}
+  .dkopf button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
+  .dinhalt{padding:18px 20px;max-height:78vh;overflow-y:auto;}
+  .feld{margin-bottom:12px;}
+  .feld label{display:block;font-size:13px;font-weight:600;color:var(--grau);margin-bottom:4px;}
+  .feld input,.feld select,.feld textarea{width:100%;}
+  .zweispaltig{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .nkraster{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .nkraster .feld label{font-size:12px;}
+  .hinweis{background:var(--akzent-hell);border-left:4px solid var(--akzent);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
+  .warnbox{background:var(--gelb-hell);border-left:4px solid var(--gelb);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;}
+  .rotbox{background:var(--rot-hell);border-left:4px solid var(--rot);padding:12px 14px;border-radius:0 8px 8px 0;margin:12px 0;font-size:15px;line-height:1.5;font-weight:600;}
+  .kal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .kalwt{font-size:12px;font-weight:700;color:var(--akzent);text-align:center;padding:4px 0;}
+  .kaltag{background:#fff;border:1px solid var(--rand);border-radius:6px;min-height:88px;padding:4px;font-size:12px;}
+  .kaltag.kalleer{background:transparent;border:none;min-height:0;}
+  .kaltag.kalheute{outline:2px solid var(--akzent);}
+  .kaltag.kalkollision{outline:2px solid var(--rot);}
+  .kalnum{font-weight:700;color:var(--grau);font-size:11px;}
+  .kalitem{border-radius:4px;padding:2px 4px;margin-top:3px;cursor:pointer;font-size:11px;line-height:1.25;overflow:hidden;}
+  .fussnote{color:var(--grau);font-size:13px;margin-top:6px;}
+  .budgetfeld{width:110px;font-size:20px;font-weight:700;border:1px dashed var(--rand);padding:2px 6px;}
+  .balkenzeile{display:flex;align-items:center;gap:10px;margin:6px 0;}
+  .balkenzeile .bname{width:150px;font-size:14px;}
+  .balken{flex:1;background:var(--grau-hell);border-radius:6px;height:22px;position:relative;overflow:hidden;}
+  .balken > div{height:100%;background:var(--akzent);border-radius:6px;}
+  .balkenzeile .bwert{width:130px;font-size:14px;text-align:right;}
+  .plus{color:var(--rot);font-weight:600;}
+  .minus{color:var(--gruen);font-weight:600;}
+  .akarte{background:#fff;border:1px solid var(--rand);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+  .akopf{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+  .score{display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:46px;border-radius:50%;font-weight:800;font-size:16px;color:#fff;}
+  .prioA{background:var(--gruen);} .prioB{background:var(--akzent);} .prioC{background:var(--gelb);} .prioD{background:var(--rot);}
+  .rolle{background:var(--text);color:var(--gold);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;letter-spacing:.5px;}
+  .atext{font-size:14.5px;line-height:1.55;color:#3a353d;margin:8px 0;}
+  .araster{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px;}
+  .afeld{background:var(--grau-hell);border-radius:8px;padding:8px 10px;font-size:13px;}
+  .afeld b{display:block;font-size:15px;}
+  .afeld input{width:70px;padding:3px 6px;font-size:14px;border:1px dashed var(--rand);border-radius:6px;}
+  .preiszeile input{width:56px;padding:3px 4px;font-size:14px;border:1px dashed var(--rand);border-radius:6px;}
+  .ergGewinn{color:var(--gruen);font-weight:700;} .ergVerlust{color:var(--rot);font-weight:700;}
+  @media print{ nav,header .werkzeuge,button.aktion{display:none!important;} body{background:#fff;} }
+
+  /* ================= ERWEITERUNGEN v4 (on-top) ================= */
+  .gpille{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .bneutral{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:700;
+    background:#e6effc;color:#14448f;border:1px solid #9dbcf0;white-space:nowrap;}
+  .kaltag.kaldoppelt{outline:3px solid var(--rot);background:var(--rot-hell);}
+  .kaldoppeltMarke{display:block;font-size:10px;font-weight:800;color:var(--rot);letter-spacing:.4px;margin-top:2px;}
+  .ampel{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .ampelGruen{background:var(--gruen);} .ampelGelb{background:var(--gelb);} .ampelRot{background:var(--rot);}
+  .kalkTab td.zahl,.kalkTab th.zahl{text-align:right;white-space:nowrap;}
+  .kalkTab tr.summe td{border-top:2px solid var(--text);font-weight:700;background:var(--akzent-hell);}
+  .kalkTab tr.ergebnis td{background:var(--text);color:var(--gold);font-weight:700;}
+  .parambox{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--rand);
+    border-radius:10px;padding:12px 16px;margin-bottom:14px;}
+  .parambox .feld{margin-bottom:0;}
+  .parambox input{width:120px;}
+  .monatszeile{display:flex;align-items:center;gap:10px;margin:4px 0;}
+  .monatszeile .mname{width:110px;font-size:14px;}
+  .monatspunkte{flex:1;display:flex;gap:3px;flex-wrap:wrap;}
+  .mpunkt{width:16px;height:16px;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  /* ---- Druckansicht Programmzettel ---- */
+  #druck{display:none;}
+  #druck .dkTitel{font-size:23px;font-weight:700;margin:0;}
+  #druck .dkSub{font-size:13px;color:#555;margin:2px 0 14px;}
+  #druck .dkLegende{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid #222;}
+  #druck .dkMonat{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#222;
+    border-bottom:1px solid #bbb;margin:16px 0 6px;padding-bottom:3px;}
+  #druck .dkZeile{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee;
+    break-inside:avoid;page-break-inside:avoid;}
+  #druck .dkBalken{width:7px;align-self:stretch;min-height:30px;border-radius:3px;flex:none;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #druck .dkDatum{width:118px;flex:none;font-size:13px;line-height:1.35;}
+  #druck .dkDatum b{display:block;font-size:15px;}
+  #druck .dkMitte{flex:1;}
+  #druck .dkTitelZ{font-size:16px;font-weight:700;line-height:1.25;}
+  #druck .dkMeta{font-size:12px;color:#555;margin-top:2px;}
+  #druck .dkRechts{width:150px;flex:none;text-align:right;}
+  #druck .dkFuss{margin-top:18px;padding-top:8px;border-top:1px solid #bbb;font-size:11px;color:#666;}
+  @media print{
+    body.druckt > *:not(#druck){display:none!important;}
+    body.druckt #druck{display:block!important;}
+    @page{size:A4 portrait;margin:14mm 12mm;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>KTS Singen · Spielplan</h1>
+  <span class="saison">Saison 2027/28 · Programmplanung</span>
+  <span style="flex:1"></span>
+  <span class="werkzeuge" style="display:flex;align-items:center;gap:10px;">
+    <span id="syncStatus" style="font-size:13px;color:#cfd4da;white-space:nowrap;">● lade…</span>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="druckDialogOeffnen()" title="Programmliste als PDF ausgeben">Programm als PDF</button>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="datenExport()">Daten sichern</button>
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="document.getElementById('importDatei').click()">Daten laden</button>
+    <input type="file" id="importDatei" accept=".json" style="display:none" onchange="datenImport(this)">
+    <button class="aktion sekundaer klein" style="background:#fff" onclick="abmelden()" title="Anmeldung auf diesem Rechner aufheben">Abmelden</button>
+  </span>
+</header>
+<nav id="hauptnav">
+  <button data-tab="uebersicht" class="aktiv" onclick="zeigeTab('uebersicht')">Übersicht</button>
+  <button data-tab="plan" onclick="zeigeTab('plan')">Planung</button>
+  <button data-tab="fix" onclick="zeigeTab('fix')">Spielplan</button>
+  <button data-tab="kalender" onclick="zeigeTab('kalender')">Kalender</button>
+  <button data-tab="auswertung" onclick="zeigeTab('auswertung')">Auswertung</button>
+  <button data-tab="analyse" onclick="zeigeTab('analyse')">Analyse</button>
+  <button data-tab="kalkulation" onclick="zeigeTab('kalkulation')">Kalkulation</button>
+  <button data-tab="markt" onclick="zeigeTab('markt')">Marktforschung</button>
+</nav>
+<main id="inhalt"></main>
+
+<dialog id="vaDialog">
+  <div class="dkopf"><h3 id="vdTitel">Veranstaltung</h3><button onclick="document.getElementById('vaDialog').close()">×</button></div>
+  <div class="dinhalt">
+    <input type="hidden" id="vdId">
+    <div class="zweispaltig">
+      <div class="feld"><label>Datum</label><input type="date" id="vdDatum"></div>
+      <div class="feld"><label>Status</label><select id="vdStatus">
+        <option value="">– ohne Status –</option><option>Idee</option><option>angefragt</option>
+        <option>optioniert</option><option>gebucht</option><option>abgesagt</option>
+      </select></div>
+    </div>
+    <div class="feld"><label>Titel</label><input type="text" id="vdTitelFeld"></div>
+    <div class="zweispaltig">
+      <div class="feld"><label>Sparte</label><select id="vdSparte"></select></div>
+      <div class="feld"><label>Agentur / Tournee</label><input type="text" id="vdAgentur"></div>
+    </div>
+    <div class="feld"><label>Gage (€)</label><input type="number" id="vdGage" min="0" step="100"></div>
+    <h3 style="margin:14px 0 8px;">Nebenkosten (€)</h3>
+    <div class="nkraster" id="vdNkRaster"></div>
+    <div class="feld" id="vdNkAltFeld" style="margin-top:8px;">
+      <label>Pauschale, noch unaufgeschlüsselt (€) – bitte nach und nach auf die Arten oben verteilen und hier auf 0 setzen</label>
+      <input type="number" id="vdNkAlt" min="0" step="100">
+    </div>
+    <div class="fussnote" id="vdSumme" style="margin-bottom:10px;"></div>
+    <div class="feld"><label>Anmerkung</label><input type="text" id="vdAnmerkung"></div>
+    <div class="feld" style="background:#f4f7fd;border:1px solid #cfdcf5;border-radius:8px;padding:10px 12px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="vdBudgetneutral" style="width:auto;margin:0;"> Budgetneutral stellen
+      </label>
+      <div class="fussnote" style="margin-top:4px;">Die Veranstaltung bleibt mit ihrem Status sichtbar (z.&nbsp;B. gebucht) und behält Gage und Nebenkosten,
+      wird aber nicht gegen das Saisonbudget gerechnet – für Positionen, die aus Fremdmitteln, Kooperationen oder anderen Töpfen gedeckt sind.</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="aktion sekundaer" id="vdLoeschen" onclick="vaLoeschen()">Löschen</button>
+      <button class="aktion" onclick="vaSpeichern()">Speichern</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="druckDialog">
+  <div class="dkopf"><h3>Programm als PDF</h3><button onclick="document.getElementById('druckDialog').close()">×</button></div>
+  <div class="dinhalt">
+    <div class="feld"><label>Welche Produktionen sollen auf die Liste?</label>
+      <select id="drUmfang">
+        <option value="gebucht">nur gebuchte Produktionen (verbindlicher Spielplan)</option>
+        <option value="fix" selected>gebucht und optioniert (Planungsstand)</option>
+        <option value="alle">alles außer abgesagt (Arbeitsstand)</option>
+      </select>
+    </div>
+    <div class="feld"><label>Überschrift</label><input type="text" id="drTitel"></div>
+    <div class="feld"><label>Zusatzzeile (optional)</label><input type="text" id="drUnter" placeholder="z. B. Stand 03.09.2026 · interner Planungsstand"></div>
+    <div class="feld"><label>Zusätzlich anzeigen</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:14px;">
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drStatus" style="width:auto" checked> Status</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drAgentur" style="width:auto"> Agentur / Tournee</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drAnmerkung" style="width:auto"> Anmerkungen</label>
+        <label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="drPreise" style="width:auto"> Preisempfehlung K1</label>
+      </div>
+    </div>
+    <div class="hinweis">Es öffnet sich der Druckdialog des Browsers. Dort als Ziel <b>„Als PDF speichern"</b> wählen.
+      Damit die Genre-Farben mitgedruckt werden, im Druckdialog unter „Weitere Einstellungen" den Haken bei
+      <b>„Hintergrundgrafiken"</b> setzen.</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="aktion sekundaer" onclick="document.getElementById('druckDialog').close()">Abbrechen</button>
+      <button class="aktion" onclick="druckStarten()">PDF erzeugen</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="druck"></div>
+
+<script>
+/* ================= STAMMDATEN ================= */
+const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Lesekonzert","Kindertheater","Sonstiges"];
+const STATI = ["gebucht","optioniert","angefragt","Idee","abgesagt"];
+const NK_ARTEN = [["tantiemen","Tantiemen"],["transfer","Transfer"],["uebernachtung","Übernachtung"],["catering","Catering"],["gema","Gema"],["sozialkasse","Sozialkasse"],["sonderabgabe","Sonderabgabe"]];
+const nkLeer = () => ({tantiemen:0,transfer:0,uebernachtung:0,catering:0,gema:0,sozialkasse:0,sonderabgabe:0});
+
+/* Vorbefüllt aus KTS_Spielplan_27_28 Planung#3.xlsx – bisherige Nebenkosten als Pauschale (nkAlt) */
+const START_VA = [
+ {vid:1, datum:"2027-10-02",titel:"1. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:""},
+ {vid:3, datum:"2027-10-21",titel:"Kleine Eheverbrechen",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:2500,anmerkung:""},
+ {vid:4, datum:"2027-10-28",titel:"Der Sohn",sparte:"Schauspiel",agentur:"Tourerleben",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:5, datum:"2027-11-27",titel:"Fitzek",sparte:"Schauspiel",agentur:"Showslot",status:"gebucht",gage:25000,nk:nkLeer(),nkAlt:10000,anmerkung:""},
+ {vid:6, datum:"2027-11-27",titel:"1. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:"gleicher Tag wie Fitzek – Überschneidung prüfen"},
+ {vid:7, datum:"2027-12-04",titel:"Drei Männer unter'm Tannenbaum",sparte:"Komödie",agentur:"Komödie am Altstadtmarkt",status:"Idee",gage:9000,nk:nkLeer(),nkAlt:4000,anmerkung:""},
+ {vid:8, datum:"2027-12-06",titel:"Der gestiefelte Kater",sparte:"Kindertheater",agentur:"Horizont",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:"2. Vorstellung am 07.12.2027"},
+ {vid:9, datum:"2027-12-11",titel:"Weihnachten in Prag",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:8500,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:11,datum:"2028-01-08",titel:"Neujahrskonzert / Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Altliste: '3. Symphoniekonzert' – Nummerierung prüfen"},
+ {vid:13,datum:"2028-01-20",titel:"Brodas",sparte:"Musik/Show",agentur:"Landgraf",status:"optioniert",gage:11000,nk:nkLeer(),nkAlt:3000,anmerkung:"lt. Altliste: fragwürdig wg. anderer Städte"},
+ {vid:14,datum:"2028-02-09",titel:"Der Videobeweis",sparte:"Schauspiel",agentur:"Berlin",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:15,datum:"2028-02-12",titel:"2. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:16,datum:"2028-02-14",titel:"Meister Eder (Pumuckl)",sparte:"Kindertheater",agentur:"Cocomico",status:"optioniert",gage:8000,nk:nkLeer(),nkAlt:0,anmerkung:"2. Vorstellung Dienstag?"},
+ {vid:17,datum:"2028-03-09",titel:"Kardinalfehler",sparte:"Schauspiel",agentur:"Landgraf",status:"optioniert",gage:9000,nk:nkLeer(),nkAlt:1500,anmerkung:""},
+ {vid:18,datum:"2028-03-17",titel:"53 Sonntage",sparte:"Komödie",agentur:"Berlin",status:"optioniert",gage:10100,nk:nkLeer(),nkAlt:1900,anmerkung:"Altliste: Betrag 10.100 € notiert – prüfen"},
+ {vid:19,datum:"2028-03-18",titel:"3. Kammerkonzert",sparte:"Kammerkonzert",agentur:"",status:"Idee",gage:6000,nk:nkLeer(),nkAlt:2000,anmerkung:""},
+ {vid:20,datum:"2028-04-01",titel:"3. Symphoniekonzert",sparte:"Symphoniekonzert",agentur:"",status:"optioniert",gage:10000,nk:nkLeer(),nkAlt:1000,anmerkung:"Nummerierung prüfen (s. 08.01.2028)"},
+ {vid:21,datum:"2028-04-07",titel:"Alle 7 Wellen",sparte:"Komödie",agentur:"Hamburger Kammerspiele",status:"optioniert",gage:6500,nk:nkLeer(),nkAlt:2500,anmerkung:""},
+ {vid:22,datum:"2028-05-04",titel:"Vier Männer im Nebel",sparte:"Komödie",agentur:"Umbreit",status:"Idee",gage:9000,nk:nkLeer(),nkAlt:4000,anmerkung:""},
+ {vid:23,datum:"2028-05-06",titel:"Die Große Zeit",sparte:"Schauspiel",agentur:"BOW",status:"optioniert",gage:15000,nk:nkLeer(),nkAlt:6000,anmerkung:""}
+];
+
+/* ================= ZENTRALE SPEICHERUNG (Supabase) ================= */
+const SYNC_URL = "https://cmisspajmbkuthhlncgd.supabase.co";
+const SYNC_KEY = "sb_publishable_884ULDr2kvptTTh8CyVX4g_afzMzT2Q";
+const PLAN_ID  = "kts-spielplan-2728";
+
+const SPEICHER = "kts_spielplan_2728_v1";
+const cloudAktiv = () => SYNC_URL !== "" && SYNC_KEY !== "";
+let syncVersion = 0;
+let syncDirty = false;
+let syncTimer = null, syncLaeuft = false;
+
+let daten = ladeLokal();
+function frischeDaten(){
+  return { veranstaltungen: JSON.parse(JSON.stringify(START_VA)),
+    budgetJahr1: 90000, budgetJahr2: 100000, sponsoren: 5000, uebertrag: 38000,
+    saisonAktuell: "2027/28", saisons: {}, naechsteVid: 24 };
+}
+function ladeLokal(){
+  let roh = null;
+  try{ roh = localStorage.getItem(SPEICHER); }catch(e){}
+  if(roh){
+    try{
+      const obj = JSON.parse(roh);
+      if(obj && obj.__cache){ syncVersion = obj.version||0; syncDirty = !!obj.dirty; return obj.daten; }
+      return obj;
+    }catch(e){
+      try{ localStorage.setItem(SPEICHER+"_defekt_"+Date.now(), roh); }catch(_){}
+      return frischeDaten();
+    }
+  }
+  return frischeDaten();
+}
+function migriere(){
+  /* läuft nach jedem Laden – lokal wie vom Server (deckt auch die Vorgänger-Version ab) */
+  if(!daten.veranstaltungen) daten.veranstaltungen = [];
+  if(daten.budgetJahr1===undefined) daten.budgetJahr1 = (daten.budget2027!==undefined ? +daten.budget2027 : 90000);
+  if(daten.budgetJahr2===undefined) daten.budgetJahr2 = (daten.budget2028!==undefined ? +daten.budget2028 : 100000);
+  delete daten.budget2027; delete daten.budget2028;
+  if(daten.sponsoren===undefined) daten.sponsoren = 5000;
+  if(daten.uebertrag===undefined) daten.uebertrag = 38000;
+  if(!daten.saisonAktuell) daten.saisonAktuell = "2027/28";
+  if(!daten.saisons) daten.saisons = {};
+  daten.veranstaltungen.forEach(v=>{
+    if(!v.nk) v.nk = nkLeer();
+    NK_ARTEN.forEach(([k])=>{ if(v.nk[k]===undefined) v.nk[k]=0; });
+    if(v.neben!==undefined){ v.nkAlt = (+v.neben||0) + (+v.nkAlt||0); delete v.neben; }
+    if(v.nkAlt===undefined) v.nkAlt = 0;
+    if(v.budgetneutral===undefined) v.budgetneutral = false;   /* v4 */
+  });
+  if(!daten.naechsteVid) daten.naechsteVid = daten.veranstaltungen.reduce((m,v)=>Math.max(m, v.vid||0), 0) + 1;
+  if(!daten.analyse) daten.analyse = {};
+  /* v4: Hausparameter für die DB1-Kalkulation */
+  if(!daten.kalk) daten.kalk = {};
+  if(daten.kalk.ust===undefined) daten.kalk.ust = 7;
+  if(daten.kalk.vvk===undefined) daten.kalk.vvk = 10;
+  if(daten.kalk.deckungsbedarf===undefined) daten.kalk.deckungsbedarf = 0;
+}
+migriere();
+
+function speichern(){
+  if(cloudAktiv()) syncDirty = true;
+  lokalSichern();
+  if(cloudAktiv()){
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushServer, 800);
+    syncStatus("speichert…","gelb");
+  }
+}
+function lokalSichern(){
+  try{
+    const alt = localStorage.getItem(SPEICHER);
+    const neu = JSON.stringify(daten);
+    if(alt){
+      let altDaten = alt;
+      try{ const o = JSON.parse(alt); altDaten = JSON.stringify(o && o.__cache ? o.daten : o); }catch(_){}
+      if(altDaten !== neu) localStorage.setItem(SPEICHER+"_prev", altDaten);
+    }
+    localStorage.setItem(SPEICHER, JSON.stringify({__cache:true, version:syncVersion, dirty:syncDirty, daten:daten}));
+  }catch(e){}
+}
+
+/* ---------- Anmeldung (gemeinsamer Team-Zugang, wie Mediaplaner) ---------- */
+const AUTH_EMAIL = "team@kts-singen.de";
+const AUTH_SPEICHER = SPEICHER + "_auth";
+
+function authSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(AUTH_SPEICHER));
+    if(s && s.access_token) return s;
+  }catch(e){}
+  return null;
+}
+function authSpeichern(tok){
+  try{ localStorage.setItem(AUTH_SPEICHER, JSON.stringify({access_token:tok.access_token,
+    refresh_token:tok.refresh_token, expires_at: Date.now() + ((tok.expires_in||3600)-60)*1000})); }catch(e){}
+}
+function abmelden(){
+  if(!cloudAktiv()){ alert("Kein Server eingetragen – keine Anmeldung aktiv."); return; }
+  if(!confirm("Anmeldung auf diesem Rechner aufheben? Beim nächsten Öffnen wird wieder das Team-Passwort gebraucht.")) return;
+  try{ localStorage.removeItem(AUTH_SPEICHER); }catch(e){}
+  location.reload();
+}
+async function anmelden(passwort){
+  const r = await fetch(SYNC_URL + "/auth/v1/token?grant_type=password", {method:"POST",
+    headers:{"apikey":SYNC_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify({email:AUTH_EMAIL, password:passwort})});
+  if(!r.ok) return false;
+  authSpeichern(await r.json());
+  return true;
+}
+async function tokenErneuern(){
+  const s = authSession();
+  if(!s || !s.refresh_token) return false;
+  try{
+    const r = await fetch(SYNC_URL + "/auth/v1/token?grant_type=refresh_token", {method:"POST",
+      headers:{"apikey":SYNC_KEY, "Content-Type":"application/json"},
+      body: JSON.stringify({refresh_token:s.refresh_token})});
+    if(!r.ok) return false;
+    authSpeichern(await r.json());
+    return true;
+  }catch(e){ return false; }
+}
+function loginZeigen(){
+  syncStatus("Anmeldung erforderlich","gelb");
+  if(document.getElementById("loginOverlay")) return;
+  const o = document.createElement("div");
+  o.id = "loginOverlay";
+  o.style.cssText = "position:fixed;inset:0;z-index:2000;background:var(--text);display:flex;align-items:center;justify-content:center;";
+  o.innerHTML = '<div style="background:#fff;border-radius:12px;padding:28px 30px;max-width:380px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
+    + '<h3 style="margin:0 0 6px;font-size:18px;">KTS Singen · Spielplan 27/28</h3>'
+    + '<p style="margin:0 0 14px;color:var(--grau);font-size:14px;">Bitte das Team-Passwort eingeben (dasselbe wie beim Mediaplaner). Der Browser merkt sich die Anmeldung auf diesem Rechner.</p>'
+    + '<input type="password" id="loginPw" style="width:100%;padding:10px;border:1px solid var(--rand);border-radius:8px;font-size:16px;" placeholder="Team-Passwort" autocomplete="current-password">'
+    + '<div id="loginFehler" style="color:var(--rot);font-size:13px;min-height:18px;margin:6px 0;"></div>'
+    + '<button class="aktion" style="width:100%;" onclick="loginVersuch()">Anmelden</button></div>';
+  document.body.appendChild(o);
+  const pw = document.getElementById("loginPw");
+  pw.addEventListener("keydown", e => { if(e.key === "Enter") loginVersuch(); });
+  pw.focus();
+}
+async function loginVersuch(){
+  const pw = document.getElementById("loginPw").value;
+  const f = document.getElementById("loginFehler");
+  if(!pw){ f.textContent = "Bitte Passwort eingeben."; return; }
+  f.textContent = "prüfe…";
+  let ok = false;
+  try{ ok = await anmelden(pw); }catch(e){}
+  if(ok){
+    const o = document.getElementById("loginOverlay"); if(o) o.remove();
+    initCloud();
+  } else {
+    f.textContent = "Passwort falsch oder keine Verbindung zum Server.";
+  }
+}
+async function sbFetch(pfad, opt){
+  opt = opt || {};
+  let s = authSession();
+  if(s && Date.now() > s.expires_at){ await tokenErneuern(); s = authSession(); }
+  opt.headers = Object.assign({"apikey":SYNC_KEY,
+    "Authorization":"Bearer " + (s ? s.access_token : SYNC_KEY),
+    "Content-Type":"application/json"}, opt.headers||{});
+  let r = await fetch(SYNC_URL + "/rest/v1/" + pfad, opt);
+  if((r.status === 401 || r.status === 403) && s){
+    if(await tokenErneuern()){
+      const s2 = authSession();
+      opt.headers["Authorization"] = "Bearer " + s2.access_token;
+      r = await fetch(SYNC_URL + "/rest/v1/" + pfad, opt);
+    }
+    if(r.status === 401 || r.status === 403){
+      try{ localStorage.removeItem(AUTH_SPEICHER); }catch(e){}
+      loginZeigen();
+    }
+  }
+  return r;
+}
+async function initCloud(){
+  if(!cloudAktiv()){ syncStatus("nur lokal – kein Server eingetragen","grau"); return; }
+  if(!authSession()){ loginZeigen(); return; }
+  syncStatus("lade…","gelb");
+  try{
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+    if(!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    if(rows.length===0){
+      const c = await sbFetch("mediaplan", {method:"POST", headers:{"Prefer":"return=representation"},
+        body: JSON.stringify({id:PLAN_ID, version:1, daten:daten})});
+      if(!c.ok) throw new Error(c.status);
+      syncVersion = 1; syncDirty = false; lokalSichern();
+      syncStatus("synchron ✓","gruen");
+    } else {
+      const srv = rows[0];
+      if(syncDirty && syncVersion === srv.version){
+        syncStatus("sende offene Änderungen…","gelb");
+        await pushServer();
+      } else if(syncDirty && syncVersion !== srv.version){
+        konfliktBanner(srv);
+      } else {
+        daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
+        neuZeichnen(); syncStatus("synchron ✓","gruen");
+      }
+    }
+  }catch(e){
+    syncStatus("offline – Änderungen lokal gepuffert","rot");
+  }
+  if(!window.__pollLaeuft){ window.__pollLaeuft = true; setInterval(pollServer, 60000); }
+}
+async function pushServer(){
+  if(!cloudAktiv() || syncLaeuft) return;
+  syncLaeuft = true;
+  try{
+    const neu = syncVersion + 1;
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&version=eq."+syncVersion,
+      {method:"PATCH", headers:{"Prefer":"return=representation"},
+       body: JSON.stringify({daten:daten, version:neu, updated_at:new Date().toISOString()})});
+    if(!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    if(rows.length===0){
+      const g = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+      const srvRows = g.ok ? await g.json() : [];
+      if(srvRows.length) konfliktBanner(srvRows[0]);
+      else syncStatus("Fehler beim Speichern","rot");
+    } else {
+      syncVersion = neu; syncDirty = false; lokalSichern();
+      syncStatus("synchron ✓","gruen");
+    }
+  }catch(e){
+    syncStatus("offline – Änderungen lokal gepuffert","rot");
+  }
+  syncLaeuft = false;
+}
+async function pollServer(){
+  if(!cloudAktiv() || syncDirty || syncLaeuft) return;
+  try{
+    const r = await sbFetch("mediaplan?id=eq."+PLAN_ID+"&select=daten,version");
+    if(!r.ok) return;
+    const rows = await r.json();
+    if(rows.length && rows[0].version > syncVersion){
+      daten = rows[0].daten; syncVersion = rows[0].version; migriere(); lokalSichern();
+      neuZeichnen(); syncStatus("aktualisiert – neuer Stand übernommen ✓","gruen");
+    }
+  }catch(e){}
+}
+function neuZeichnen(){
+  const dlg = document.getElementById("vaDialog");
+  if(dlg && dlg.open) return;
+  kopfzeile();
+  zeigeTab(aktuellerTab);
+}
+function kopfzeile(){
+  const kopf = document.querySelector("header .saison");
+  if(kopf) kopf.textContent = "Saison " + daten.saisonAktuell + " · Programmplanung";
+}
+function syncStatus(text, farbe){
+  const el = document.getElementById("syncStatus"); if(!el) return;
+  el.textContent = "● " + text;
+  el.style.color = {gruen:"#9fdca7", gelb:"#ffd98e", rot:"#ffb3ad", grau:"#cfd4da"}[farbe] || "#cfd4da";
+}
+function konfliktBanner(srv){
+  syncStatus("Konflikt – bitte entscheiden","rot");
+  window.__konfliktServer = srv;
+  let b = document.getElementById("konfliktBanner");
+  if(b) b.remove();
+  b = document.createElement("div");
+  b.id = "konfliktBanner";
+  b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--rot-hell);border-bottom:3px solid var(--rot);padding:12px 20px;font-size:15px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;";
+  b.innerHTML = '<b>⚠ Gleichzeitige Änderung:</b> Jemand anderes hat zwischenzeitlich gespeichert. ' +
+    '<button class="aktion klein" onclick="konfliktServerNehmen()">Dessen Stand übernehmen (meine letzte Änderung verwerfen)</button> ' +
+    '<button class="aktion sekundaer klein" onclick="konfliktMeinsErzwingen()">Meinen Stand durchsetzen (dessen Änderung überschreiben)</button>';
+  document.body.appendChild(b);
+}
+function konfliktServerNehmen(){
+  const srv = window.__konfliktServer; if(!srv) return;
+  daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
+  const b = document.getElementById("konfliktBanner"); if(b) b.remove();
+  const dlg = document.getElementById("vaDialog"); if(dlg && dlg.open) dlg.close();
+  kopfzeile(); zeigeTab(aktuellerTab);
+  syncStatus("synchron ✓","gruen");
+}
+async function konfliktMeinsErzwingen(){
+  const srv = window.__konfliktServer; if(!srv) return;
+  syncVersion = srv.version;
+  syncDirty = true; lokalSichern();
+  const b = document.getElementById("konfliktBanner"); if(b) b.remove();
+  await pushServer();
+}
+function datenExport(){
+  const blob = new Blob([JSON.stringify(daten,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "KTS_Spielplan_Sicherung_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+}
+function datenImport(inp){
+  const f = inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ daten = JSON.parse(r.result); migriere(); speichern(); kopfzeile(); zeigeTab(aktuellerTab); alert("Daten geladen."); }catch(e){ alert("Datei konnte nicht gelesen werden."); } };
+  r.readAsText(f);
+}
+
+/* ================= HILFEN ================= */
+const euro = n => (Math.round(n)).toLocaleString("de-DE") + " €";
+const datumDE = iso => { if(!iso) return "–"; const [j,m,t] = iso.split("-"); return t+"."+m+"."+j; };
+const nkSumme = v => NK_ARTEN.reduce((a,[k])=>a+(+v.nk[k]||0),0) + (+v.nkAlt||0);
+const gesamt = v => (+v.gage||0) + nkSumme(v);
+const zaehltBudget = v => v.status !== "abgesagt";
+/* v4: budgetwirksam = nicht abgesagt UND nicht budgetneutral gestellt */
+const budgetwirksam = v => v.status !== "abgesagt" && !v.budgetneutral;
+const neutralSumme = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).reduce((a,v)=>a+gesamt(v),0);
+const neutralAnzahl = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).length;
+const WOCHENTAGE = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const wochentag = iso => { if(!iso) return ""; const d = new Date(iso+"T12:00:00"); return isNaN(d)?"":WOCHENTAGE[d.getDay()]; };
+/* v4: Farbkennung je Sparte – für Programmzettel, Kalender-Legende und Saisonverlauf */
+const GENRE_FARBEN = {
+  "Schauspiel":"#7e3167", "Komödie":"#c2410c", "Musik/Show":"#1d4ed8", "Symphoniekonzert":"#0f766e",
+  "Kammerkonzert":"#6d28d9", "Lesekonzert":"#a16207", "Kindertheater":"#15803d", "Sonstiges":"#57534e"
+};
+const genreFarbe = s => GENRE_FARBEN[s] || "#57534e";
+/* v4: Ist-Auslastung je Genre 25/26 (identisch mit den Werten im Reiter Marktforschung) */
+const GENRE_IST = {"Kindertheater":90, "Komödie":67, "Musik/Show":65, "Symphoniekonzert":63, "Kammerkonzert":57, "Schauspiel":56, "Lesekonzert":56, "Sonstiges":60};
+/* v5: Sparten ohne eigene Ist-Historie im Haus – der Vergleichswert ist eine Näherung, keine Messung */
+const GENRE_IST_NAEHERUNG = ["Lesekonzert","Sonstiges"];
+/* v5: Startannahmen für neue Sparten, die es 25/26 noch nicht gab.
+   Greift nur, wenn für eine Produktion keine Einzelvorgabe existiert. */
+const SPARTEN_VORGABE = {
+  "Lesekonzert": {preise:[34,29,24,19], plaetze:550, auslastung:55, faktor:0.80, rolle:"IMAGETREIBER",
+    text:"Neues Lesekonzert – Text und Live-Musik an einem Abend. Startannahmen: 550 Plätze eingerichtet, 55 % Auslastung, Erlösfaktor 0,80 (weniger Abo-Verwässerung als in den Ringen, weil das Format überwiegend im Freiverkauf läuft). Zielgruppe 40+, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Werte bitte an der konkreten Produktion nachziehen."}
+};
+/* v4: echte Doppelbelegung = mehr als eine GEBUCHTE Produktion am selben Tag.
+   Mehrere Ideen/Anfragen/Optionen am selben Tag sind Planung und deshalb erlaubt. */
+function doppelbelegungen(){
+  const tage = {};
+  daten.veranstaltungen.filter(v=>v.status==="gebucht" && v.datum).forEach(v=>{ (tage[v.datum]=tage[v.datum]||[]).push(v); });
+  return Object.entries(tage).filter(([d,l])=>l.length>1).sort();
+}
+function gebuchtAmTag(datum, ausserVid){
+  return daten.veranstaltungen.filter(v=>v.status==="gebucht" && v.datum===datum && v.vid!==ausserVid);
+}
+function gesamtBudget(){ return (+daten.budgetJahr1||0)+(+daten.budgetJahr2||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
+function verplant(){ return daten.veranstaltungen.filter(budgetwirksam).reduce((a,v)=>a+gesamt(v),0); }
+function statusKlasse(s){ return s ? "s"+s : "sohne"; }
+function statusText(s){ return s || "ohne Status"; }
+function sortiert(){ return daten.veranstaltungen.slice().sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")); }
+
+function warnungen(){
+  const w = [];
+  const frei = gesamtBudget() - verplant();
+  if(frei < 0) w.push({art:"rot", text:"Budget überzogen um <b>"+euro(-frei)+"</b> – Positionen absagen, verhandeln oder Budget erhöhen."});
+  /* v4: harte Doppelbelegung zuerst – der Saal kann nur einmal belegt werden */
+  const dopp = doppelbelegungen();
+  const doppTage = dopp.map(([d])=>d);
+  dopp.forEach(([d,l])=>{
+    w.push({art:"rot", text:"DOPPELBELEGUNG <b>"+datumDE(d)+"</b> ("+wochentag(d)+"): "+l.length+" gebuchte Produktionen am selben Tag – "
+      + l.map(v=>"<b>"+v.titel+"</b>").join(" und ")
+      + ". Der Saal kann nur einmal belegt werden: eine der beiden verlegen oder auf „optioniert“ zurückstufen."});
+  });
+  const tage = {};
+  daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.datum).forEach(v=>{ (tage[v.datum]=tage[v.datum]||[]).push(v); });
+  Object.entries(tage).filter(([d,l])=>l.length>1 && doppTage.indexOf(d)===-1).sort().forEach(([d,l])=>{
+    w.push({art:"gelb", text:"<b>"+datumDE(d)+":</b> "+l.length+" Veranstaltungen am selben Tag ("+l.map(v=>v.titel).join(", ")+") – Mehrfachplanung, noch keine Doppelbelegung. Vor dem Buchen entscheiden."});
+  });
+  const ohneStatus = daten.veranstaltungen.filter(v=>!v.status);
+  if(ohneStatus.length>0) w.push({art:"gelb", text:ohneStatus.length+" Veranstaltung(en) ohne Status: "+ohneStatus.map(v=>v.titel).join(", ")+"."});
+  const ohneDatum = daten.veranstaltungen.filter(v=>!v.datum);
+  if(ohneDatum.length>0) w.push({art:"gelb", text:ohneDatum.length+" Veranstaltung(en) ohne Datum: "+ohneDatum.map(v=>v.titel).join(", ")+"."});
+  const pauschal = daten.veranstaltungen.filter(v=>(+v.nkAlt||0)>0);
+  if(pauschal.length>0) w.push({art:"gelb", text:pauschal.length+" Veranstaltung(en) mit unaufgeschlüsselter Nebenkosten-Pauschale – nach und nach auf Tantiemen, Transfer usw. verteilen."});
+  return w;
+}
+function warnungenHTML(){
+  const w = warnungen();
+  if(w.length===0) return '<div class="hinweis">Keine Warnungen – Budget im Rahmen, keine Terminkollisionen, alle Angaben vollständig.</div>';
+  return w.map(x=>`<div class="${x.art==="rot"?"rotbox":"warnbox"}">${x.text}</div>`).join("");
+}
+
+/* ================= ANSICHTEN ================= */
+let aktuellerTab = "uebersicht";
+function zeigeTab(tab){
+  aktuellerTab = tab;
+  document.querySelectorAll("#hauptnav button").forEach(b=>b.classList.toggle("aktiv", b.dataset.tab===tab));
+  ({uebersicht:zeigeUebersicht, plan:zeigePlan, fix:zeigeFix, kalender:zeigeKalender, auswertung:zeigeAuswertung, analyse:zeigeAnalyse, kalkulation:zeigeKalkulation, markt:zeigeMarkt})[tab]();
+  window.scrollTo(0,0);
+}
+function budgetFeld(feld, wert){
+  return `<input type="number" class="budgetfeld" step="1000" min="0" value="${wert}" onchange="budgetAendern('${feld}', this.value)"> €`;
+}
+function budgetAendern(feld, wert){
+  daten[feld] = Math.max(0, +wert||0);
+  speichern(); zeigeUebersicht();
+}
+function zeigeUebersicht(){
+  const gb = gesamtBudget(), vp = verplant(), frei = gb - vp;
+  const proStatus = {};
+  STATI.forEach(s=>proStatus[s]={summe:0, anzahl:0});
+  proStatus["ohne"] = {summe:0, anzahl:0};
+  daten.veranstaltungen.forEach(v=>{
+    const k = v.status || "ohne";
+    if(!proStatus[k]) proStatus[k]={summe:0,anzahl:0};
+    proStatus[k].summe += gesamt(v); proStatus[k].anzahl++;
+  });
+  const proSparte = {};
+  SPARTEN.forEach(s=>proSparte[s]={summe:0, anzahl:0});
+  daten.veranstaltungen.filter(zaehltBudget).forEach(v=>{
+    if(!proSparte[v.sparte]) proSparte[v.sparte]={summe:0,anzahl:0};
+    proSparte[v.sparte].summe += gesamt(v); proSparte[v.sparte].anzahl++;
+  });
+  const maxSparte = Math.max(1, ...Object.values(proSparte).map(x=>x.summe));
+  const nkArten = {};
+  NK_ARTEN.forEach(([k,l])=>nkArten[k]=0);
+  let nkPauschal = 0;
+  daten.veranstaltungen.filter(zaehltBudget).forEach(v=>{
+    NK_ARTEN.forEach(([k])=>{ nkArten[k] += (+v.nk[k]||0); });
+    nkPauschal += (+v.nkAlt||0);
+  });
+  const maxNk = Math.max(1, ...Object.values(nkArten), nkPauschal);
+  const anzahlAktiv = daten.veranstaltungen.filter(zaehltBudget).length;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Budget-Übersicht Saison ${daten.saisonAktuell}</h2>
+    <div class="karten">
+      <div class="karte"><div class="wert">${budgetFeld("budgetJahr1", +daten.budgetJahr1||0)}</div><div class="label">Budget 2026 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("budgetJahr2", +daten.budgetJahr2||0)}</div><div class="label">Budget 2027 (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("sponsoren", +daten.sponsoren||0)}</div><div class="label">Sponsoreneinnahmen (änderbar)</div></div>
+      <div class="karte"><div class="wert">${budgetFeld("uebertrag", +daten.uebertrag||0)}</div><div class="label">Übertrag aus anderen Bereichen (änderbar)</div></div>
+    </div>
+    <div class="karten">
+      <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison ${daten.saisonAktuell}</div></div>
+      <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant (ohne „abgesagt") · ${anzahlAktiv} Veranstaltungen</div></div>
+      <div class="karte" style="${frei<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert" style="${frei<0?"color:var(--rot)":""}">${euro(frei)}</div><div class="label">${frei<0?"BUDGET ÜBERZOGEN":"Noch freies Budget"}</div></div>
+      ${neutralAnzahl()>0?`<div class="karte" style="border-color:#9dbcf0;background:#f4f7fd;"><div class="wert" style="color:#14448f">${euro(neutralSumme())}</div><div class="label">davon budgetneutral gestellt · ${neutralAnzahl()} Veranstaltung(en) – nicht in „verplant" enthalten</div></div>`:""}
+    </div>
+    <h3>Warnungen</h3>
+    ${warnungenHTML()}
+    <h3>Nach Status</h3>
+    <table><tr><th>Status</th><th>Anzahl</th><th>Summe</th></tr>
+      ${STATI.concat(["ohne"]).filter(s=>proStatus[s] && proStatus[s].anzahl>0).map(s=>`<tr>
+        <td><span class="pille ${s==="ohne"?"sohne":"s"+s}">${s==="ohne"?"ohne Status":s}</span></td>
+        <td>${proStatus[s].anzahl}</td><td>${euro(proStatus[s].summe)}</td></tr>`).join("")}
+    </table>
+    <h3>Nach Sparte (ohne „abgesagt")</h3>
+    ${SPARTEN.filter(s=>proSparte[s].anzahl>0).map(s=>`
+      <div class="balkenzeile"><div class="bname">${s} (${proSparte[s].anzahl})</div>
+      <div class="balken"><div style="width:${Math.round(proSparte[s].summe/maxSparte*100)}%"></div></div>
+      <div class="bwert">${euro(proSparte[s].summe)}</div></div>`).join("")}
+    <h3>Nebenkosten nach Art (ohne „abgesagt")</h3>
+    ${NK_ARTEN.map(([k,l])=>`
+      <div class="balkenzeile"><div class="bname">${l}</div>
+      <div class="balken"><div style="width:${Math.round(nkArten[k]/maxNk*100)}%"></div></div>
+      <div class="bwert">${euro(nkArten[k])}</div></div>`).join("")}
+    ${nkPauschal>0?`<div class="balkenzeile"><div class="bname" style="color:var(--gelb)">Pauschale (alt)</div>
+      <div class="balken"><div style="width:${Math.round(nkPauschal/maxNk*100)}%;background:var(--gelb)"></div></div>
+      <div class="bwert">${euro(nkPauschal)}</div></div>`:""}
+    <p class="fussnote">Budgetfelder direkt anklicken und ändern – alles andere rechnet automatisch. Datenstand wird zentral gespeichert und gilt für das ganze Team.${neutralAnzahl()>0?" Die Balken nach Sparte und Nebenkostenart zeigen weiterhin <b>alle</b> Kosten, auch die budgetneutral gestellten – nur „verplant“ und „freies Budget“ lassen sie außen vor.":""}</p>`;
+}
+
+function zeigePlan(filterStatus, filterSparte){
+  const selStatus = filterStatus||"", selSparte = filterSparte||"";
+  let liste = sortiert();
+  if(selStatus==="ohne") liste = liste.filter(v=>!v.status);
+  else if(selStatus) liste = liste.filter(v=>v.status===selStatus);
+  if(selSparte) liste = liste.filter(v=>v.sparte===selSparte);
+  const summe = liste.filter(budgetwirksam).reduce((a,v)=>a+gesamt(v),0);
+  const summeNeutral = liste.filter(v=>v.status!=="abgesagt" && v.budgetneutral).reduce((a,v)=>a+gesamt(v),0);
+  const doppTage = doppelbelegungen().map(([d])=>d);
+  let zeilen = "", letztesJahr = null;
+  liste.forEach(v=>{
+    const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
+    if(jahr !== letztesJahr){
+      zeilen += `<tr class="jahrtrenner"><td colspan="8">▸ ${jahr==="ohne Datum"?"OHNE DATUM":jahr}</td></tr>`;
+      letztesJahr = jahr;
+    }
+    zeilen += `<tr class="klickbar ${v.status==="abgesagt"?"zAbgesagt":""}" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}${doppTage.indexOf(v.datum)>-1 && v.status==="gebucht"?'<div class="fussnote" style="color:var(--rot);font-weight:700">⚠ doppelt belegt</div>':""}</td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></td><td>${v.agentur||""}</td>
+      <td><span class="pille ${statusKlasse(v.status)}">${statusText(v.status)}</span></td>
+      <td>${euro(+v.gage||0)}</td>
+      <td>${euro(nkSumme(v))}${(+v.nkAlt||0)>0?'<div class="fussnote">davon Pauschale: '+euro(+v.nkAlt)+'</div>':""}</td>
+      <td><b>${euro(gesamt(v))}</b></td></tr>`;
+  });
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Planung ${daten.saisonAktuell} – alle Projekte</h2>
+    <p class="fussnote" style="margin-top:-8px">Arbeitsliste: Hier steht alles, woran gearbeitet wird – verbindlich wird eine Produktion erst mit Status <b>gebucht</b>, dann erscheint sie automatisch im Reiter „Spielplan".</p>
+    <div class="leiste">
+      <button class="aktion" onclick="vaDialogOeffnen(null)">+ Neue Veranstaltung</button>
+      <select onchange="zeigePlan(this.value, '${selSparte}')">
+        <option value="">Alle Status</option>
+        ${STATI.map(s=>`<option ${selStatus===s?"selected":""}>${s}</option>`).join("")}
+        <option value="ohne" ${selStatus==="ohne"?"selected":""}>ohne Status</option>
+      </select>
+      <select onchange="zeigePlan('${selStatus}', this.value)">
+        <option value="">Alle Sparten</option>
+        ${SPARTEN.map(s=>`<option ${selSparte===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+      <button class="aktion sekundaer" onclick="druckDialogOeffnen()">Programm als PDF</button>
+      <span class="fussnote">${liste.length} Veranstaltungen · budgetwirksam ${euro(summe)}${summeNeutral>0?" · budgetneutral "+euro(summeNeutral):""} · Zeile anklicken zum Bearbeiten</span>
+    </div>
+    <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Status</th><th>Gage</th><th>Nebenkosten</th><th>Gesamt</th></tr>
+    ${zeilen}
+    </table>`;
+}
+
+function zeigeFix(){
+  const liste = sortiert().filter(v=>v.status==="gebucht");
+  const summe = liste.reduce((a,v)=>a+gesamt(v),0);
+  const doppTageFix = doppelbelegungen().map(([d])=>d);
+  let zeilen = "", letztesJahr = null;
+  liste.forEach(v=>{
+    const jahr = v.datum ? v.datum.slice(0,4) : "ohne Datum";
+    if(jahr !== letztesJahr){
+      zeilen += `<tr class="jahrtrenner"><td colspan="6">▸ ${jahr==="ohne Datum"?"OHNE DATUM":jahr}</td></tr>`;
+      letztesJahr = jahr;
+    }
+    zeilen += `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)} <span class="fussnote">${wochentag(v.datum)}</span>${doppTageFix.indexOf(v.datum)>-1?'<div class="fussnote" style="color:var(--rot);font-weight:700">⚠ doppelt belegt</div>':""}</td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}${v.anmerkung?`<div class="fussnote">${v.anmerkung}</div>`:""}</td>
+      <td><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></td><td>${v.agentur||""}</td>
+      <td>${euro(+v.gage||0)}</td><td><b>${euro(gesamt(v))}</b></td></tr>`;
+  });
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Spielplan ${daten.saisonAktuell} – fix gebuchte Produktionen</h2>
+    ${liste.length===0
+      ? '<div class="hinweis">Noch keine gebuchten Produktionen. Sobald in der <b>Planung</b> eine Produktion auf den Status „gebucht" gestellt wird, erscheint sie automatisch hier.</div>'
+      : `<div class="leiste"><button class="aktion sekundaer" onclick="druckDialogOeffnen()">Programm als PDF</button><span class="fussnote">${liste.length} Produktion(en) fix · Gesamtkosten ${euro(summe)} · Zeile anklicken zum Bearbeiten</span></div>
+    <table><tr><th>Datum</th><th>Titel</th><th>Sparte</th><th>Agentur / Tournee</th><th>Gage</th><th>Gesamt</th></tr>
+    ${zeilen}
+    </table>`}
+    <p class="fussnote">Dieser Reiter ist die verbindliche Sicht – geeignet für Abstimmungen mit Technik, Presse und Vorverkauf.</p>`;
+}
+
+let kalMonat = null;
+function zeigeKalender(){
+  if(!kalMonat){
+    const termine = sortiert().filter(v=>v.datum);
+    const heute = new Date().toISOString().slice(0,10);
+    const naechster = termine.find(v=>v.datum>=heute);
+    kalMonat = (naechster ? naechster.datum : (termine[0]?termine[0].datum:heute)).slice(0,7);
+  }
+  const [J,M] = kalMonat.split("-").map(Number);
+  const monatsname = new Date(J, M-1, 1).toLocaleDateString("de-DE",{month:"long",year:"numeric"});
+  const startWt = (new Date(J, M-1, 1).getDay()+6)%7;
+  const tageImMonat = new Date(J, M, 0).getDate();
+  const heuteIso = new Date().toISOString().slice(0,10);
+  const proTag = {};
+  daten.veranstaltungen.filter(v=>v.datum && v.status!=="abgesagt").forEach(v=>{ (proTag[v.datum]=proTag[v.datum]||[]).push(v); });
+  const zellen = [];
+  for(let i=0;i<startWt;i++) zellen.push('<div class="kaltag kalleer"></div>');
+  for(let t=1;t<=tageImMonat;t++){
+    const iso = kalMonat+"-"+String(t).padStart(2,"0");
+    const heutigen = proTag[iso]||[];
+    let inhalt = `<div class="kalnum">${t}</div>`;
+    heutigen.forEach(v=>{
+      inhalt += `<div class="kalitem ${statusKlasse(v.status)}" style="border-left:4px solid ${genreFarbe(v.sparte)}" onclick="event.stopPropagation();vaDialogOeffnen(${v.vid})">${v.titel}</div>`;
+    });
+    const gebuchte = heutigen.filter(v=>v.status==="gebucht").length;
+    if(gebuchte>1) inhalt += '<span class="kaldoppeltMarke">⚠ DOPPELT BELEGT</span>';
+    const kollision = gebuchte>1 ? " kaldoppelt" : (heutigen.length>1 ? " kalkollision" : "");
+    zellen.push(`<div class="kaltag${iso===heuteIso?" kalheute":""}${kollision}">${inhalt}</div>`);
+  }
+  const anzahlMonat = daten.veranstaltungen.filter(v=>v.datum && v.datum.slice(0,7)===kalMonat).length;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Saisonkalender</h2>
+    <div class="leiste">
+      <button class="aktion sekundaer klein" onclick="kalNav(-1)">← Vormonat</button>
+      <b style="min-width:170px;text-align:center;font-size:17px">${monatsname}</b>
+      <button class="aktion sekundaer klein" onclick="kalNav(1)">Folgemonat →</button>
+      <button class="aktion sekundaer klein" onclick="kalMonat=null;zeigeKalender()">Zum nächsten Termin</button>
+      <span class="fussnote">${anzahlMonat} Veranstaltung(en) in diesem Monat · Eintrag anklicken zum Bearbeiten</span>
+    </div>
+    <div class="kal">
+      ${["Mo","Di","Mi","Do","Fr","Sa","So"].map(w=>`<div class="kalwt">${w}</div>`).join("")}
+      ${zellen.join("")}
+    </div>
+    <p class="fussnote">Füllfarbe nach Status: grün gebucht, magenta optioniert, gelb angefragt, grau Idee. Der farbige Streifen links am Eintrag zeigt die Sparte.
+      <b>Rot ausgefüllte Tage mit Warnhinweis = echte Doppelbelegung, also zwei gebuchte Produktionen an einem Tag.</b>
+      Rot umrandete Tage ohne Hinweis = mehrere Termine in Planung, noch keine Doppelbelegung. Abgesagte werden nicht angezeigt.</p>
+    <div class="leiste" style="margin-top:10px;">${SPARTEN.map(s=>`<span class="gpille" style="background:${genreFarbe(s)}">${s}</span>`).join("")}</div>`;
+}
+function kalNav(delta){
+  const [J,M] = kalMonat.split("-").map(Number);
+  const d = new Date(J, M-1+delta, 1);
+  kalMonat = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  zeigeKalender();
+}
+
+/* ================= AUSWERTUNG (Saisonvergleich) ================= */
+function kennzahlen(vas){
+  const aktiv = vas.filter(zaehltBudget);
+  const k = { anzahl: aktiv.length, gage: 0, nk: 0, nkArten: {}, gesamt: 0, sparten: {} };
+  NK_ARTEN.forEach(([key])=>k.nkArten[key]=0);
+  k.nkArten["pauschale"]=0;
+  aktiv.forEach(v=>{
+    k.gage += (+v.gage||0);
+    NK_ARTEN.forEach(([key])=>{ k.nkArten[key] += (+v.nk[key]||0); });
+    k.nkArten["pauschale"] += (+v.nkAlt||0);
+    k.nk += nkSumme(v);
+    k.gesamt += gesamt(v);
+    if(!k.sparten[v.sparte]) k.sparten[v.sparte]={anzahl:0,summe:0};
+    k.sparten[v.sparte].anzahl++; k.sparten[v.sparte].summe += gesamt(v);
+  });
+  k.oGage = k.anzahl>0 ? k.gage/k.anzahl : 0;
+  k.oGesamt = k.anzahl>0 ? k.gesamt/k.anzahl : 0;
+  return k;
+}
+function deltaZelle(alt, neu, istGeld){
+  if(alt===0 && neu===0) return "<td>–</td><td>–</td>";
+  const d = neu - alt;
+  const proz = alt>0 ? (d/alt*100) : null;
+  const kl = d>0 ? "plus" : (d<0 ? "minus" : "");
+  const wert = istGeld===false ? (d>0?"+":"")+Math.round(d) : (d>0?"+":"")+Math.round(d).toLocaleString("de-DE")+" €";
+  return `<td class="${kl}">${wert}</td><td class="${kl}">${proz===null?"neu":(proz>0?"+":"")+proz.toFixed(1).replace(".",",")+" %"}</td>`;
+}
+let vglSaison = "";
+function zeigeAuswertung(){
+  const archivNamen = Object.keys(daten.saisons||{}).sort();
+  if(!vglSaison || !daten.saisons[vglSaison]) vglSaison = archivNamen[archivNamen.length-1] || "";
+  const aktuell = kennzahlen(daten.veranstaltungen);
+  let vergleichHTML = "";
+  if(vglSaison && daten.saisons[vglSaison]){
+    const archiv = daten.saisons[vglSaison];
+    const alt = kennzahlen(archiv.veranstaltungen||[]);
+    const zeile = (name, a, n, istGeld) => `<tr><td>${name}</td>
+      <td>${istGeld===false?Math.round(a):euro(a)}</td>
+      <td>${istGeld===false?Math.round(n):euro(n)}</td>
+      ${deltaZelle(a, n, istGeld)}</tr>`;
+    const alleSparten = Array.from(new Set(Object.keys(alt.sparten).concat(Object.keys(aktuell.sparten))));
+    vergleichHTML = `
+      <table><tr><th>Kennzahl</th><th>Saison ${vglSaison}</th><th>Saison ${daten.saisonAktuell} (aktuell)</th><th>Δ absolut</th><th>Δ %</th></tr>
+        ${zeile("Veranstaltungen (ohne abgesagt)", alt.anzahl, aktuell.anzahl, false)}
+        ${zeile("Gagen gesamt", alt.gage, aktuell.gage)}
+        ${zeile("Ø Gage je Veranstaltung", alt.oGage, aktuell.oGage)}
+        ${zeile("Nebenkosten gesamt", alt.nk, aktuell.nk)}
+        ${NK_ARTEN.map(([k,l])=>zeile("· "+l, alt.nkArten[k], aktuell.nkArten[k])).join("")}
+        ${ (alt.nkArten.pauschale>0||aktuell.nkArten.pauschale>0) ? zeile("· Pauschale (unaufgeschlüsselt)", alt.nkArten.pauschale, aktuell.nkArten.pauschale) : ""}
+        ${zeile("Gesamtkosten", alt.gesamt, aktuell.gesamt)}
+        ${zeile("Ø Kosten je Veranstaltung", alt.oGesamt, aktuell.oGesamt)}
+      </table>
+      <h3>Je Sparte (Gesamtkosten)</h3>
+      <table><tr><th>Sparte</th><th>Saison ${vglSaison}</th><th>Saison ${daten.saisonAktuell}</th><th>Δ absolut</th><th>Δ %</th></tr>
+        ${alleSparten.map(s=>{
+          const a = alt.sparten[s]||{summe:0,anzahl:0}, n = aktuell.sparten[s]||{summe:0,anzahl:0};
+          return `<tr><td>${s} <span class="fussnote">(${a.anzahl} → ${n.anzahl})</span></td>
+            <td>${euro(a.summe)}</td><td>${euro(n.summe)}</td>${deltaZelle(a.summe, n.summe)}</tr>`;
+        }).join("")}
+      </table>
+      <p class="fussnote">Rot = teurer geworden, grün = günstiger. Ø-Werte gleichen unterschiedliche Veranstaltungszahlen aus – für Preisentwicklung sind sie die verlässlichere Größe.</p>`;
+  } else {
+    vergleichHTML = `<div class="hinweis"><b>Noch keine Vergleichssaison archiviert.</b> So funktioniert der Kreislauf:
+      Am Ende der Saison unten auf „Saison abschließen &amp; neue beginnen" klicken – der komplette Stand wird eingefroren,
+      der Spielplan geleert und die neue Saison beginnt. Ab dann vergleicht diese Seite automatisch die laufende Planung
+      mit den archivierten Vorjahren: Gagen, jede Nebenkosten-Art, Kosten je Sparte – inklusive prozentualer Preisentwicklung.</div>`;
+  }
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Auswertung – Preisentwicklung über die Saisons</h2>
+    <div class="leiste">
+      <label class="fussnote">Vergleichssaison:</label>
+      <select onchange="vglSaison=this.value;zeigeAuswertung()" ${archivNamen.length===0?"disabled":""}>
+        ${archivNamen.length===0?'<option>– noch keine archiviert –</option>':archivNamen.map(n=>`<option ${vglSaison===n?"selected":""}>${n}</option>`).join("")}
+      </select>
+      <span style="flex:1"></span>
+      <button class="aktion sekundaer" onclick="saisonAbschliessen()">Saison abschließen &amp; neue beginnen</button>
+    </div>
+    ${vergleichHTML}
+    <h3>Aktuelle Saison ${daten.saisonAktuell} in Zahlen</h3>
+    <div class="karten">
+      <div class="karte"><div class="wert">${aktuell.anzahl}</div><div class="label">Veranstaltungen (ohne abgesagt)</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.gage)}</div><div class="label">Gagen gesamt · Ø ${euro(aktuell.oGage)}</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.nk)}</div><div class="label">Nebenkosten gesamt</div></div>
+      <div class="karte"><div class="wert">${euro(aktuell.gesamt)}</div><div class="label">Gesamtkosten · Ø ${euro(aktuell.oGesamt)}</div></div>
+    </div>`;
+}
+function naechsteSaison(name){
+  const m = String(name).match(/^(\d{4})\/(\d{2})$/);
+  if(!m) return name + " +1";
+  const j = +m[1] + 1;
+  return j + "/" + String((+m[2]+1) % 100).padStart(2,"0");
+}
+function saisonAbschliessen(){
+  const name = daten.saisonAktuell;
+  if(daten.saisons[name] && !confirm("Für "+name+" existiert schon ein Archiv – überschreiben?")) return;
+  if(!confirm("Saison "+name+" abschließen?\n\nDer komplette Stand ("+daten.veranstaltungen.length+" Veranstaltungen) wird archiviert, der Spielplan geleert und die Saison "+naechsteSaison(name)+" beginnt. Die Budgetfelder bleiben als Ausgangswerte stehen.")) return;
+  daten.saisons[name] = {
+    veranstaltungen: JSON.parse(JSON.stringify(daten.veranstaltungen)),
+    budgetJahr1: daten.budgetJahr1, budgetJahr2: daten.budgetJahr2,
+    sponsoren: daten.sponsoren, uebertrag: daten.uebertrag,
+    abgeschlossen: new Date().toISOString().slice(0,10)
+  };
+  daten.veranstaltungen = [];
+  daten.saisonAktuell = naechsteSaison(name);
+  vglSaison = name;
+  speichern(); kopfzeile(); zeigeAuswertung();
+}
+
+/* ================= ANALYSE (Strategie, Preise, Wirtschaftlichkeit) =================
+   Kalibrierung: reale effektive Erlöse je Besucher aus Saison 25/26 (Mediaplaner-Archiv):
+   Symphonie ~20 € · Neujahr ~26 € · Kammer ~18 € · Komödie ~22,50 € · Schauspiel ~21 € ·
+   Musik/Show ~26 € · Kinder ~8 €. Der Erlösfaktor bildet Abo-/Ermäßigungs-Verwässerung ab.
+   Preisrahmen: Entgeltordnung BAKTS 03.12.2025 (Freiverkauf ab Herbst 2026). SV = freie Preise. */
+const ANALYSE_VORGABEN = {
+ 1:{score:63,prio:"B",rolle:"BASIS",sv:false,preise:[42,36,29,19],plaetze:847,auslastung:58,faktor:0.70,
+   text:"Saisonauftakt für das Abo-Publikum, 25/26 kamen 525 Besucher. Zielgruppe 60+, Einzug Singen/Hegau. Kein Presse-, kein Neukundenpotenzial – aber verlässliche Ringversorgung. Preise leicht über Ist (K1 42 statt 40) sind durchsetzbar, der Rahmen gäbe bis 52 her. Empfehlung: buchen, als verlässliche Basis führen."},
+ 3:{score:64,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
+   text:"Solider Boulevard-Krimi, Komödienring-Kernware für 50+. Läuft überall, ersetzt nichts, schadet nichts – austauschbar im Wettbewerbsvergleich (Konstanz/Friedrichshafen spielen Vergleichbares). Komödien erreichten 25/26 verlässlich 450–680 Besucher, effektiv 22–23 €/Ticket. Rechnet sich knapp. Buchen."},
+ 4:{score:70,prio:"B",rolle:"PFLEGE",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
+   text:"Florian Zeller ist dramatisch erstklassig – künstlerische Qualität 8/10, das stärkste Schauspiel der Saison. Thema (Depression eines Jugendlichen) schwer, aber anschlussfähig: Schulkooperationen, Beratungsstellen, thematische Einführung. So wird aus einem erwartbaren Ring-Verlust (~3.000 €) ein Reputationsgewinn. Buchen, aktiv rahmen statt nur zeigen."},
+ 5:{score:88,prio:"A",rolle:"CASHCOW",sv:true,preise:[55,48,42,35],plaetze:1123,auslastung:88,faktor:0.90,
+   text:"Der Knaller der Saison und bereits gebucht – richtig so. Fitzek zieht bundesweit 45–65 € Ticketpreis, Bestseller-Bekanntheit erledigt die halbe Werbung, Einzugsgebiet bis in die Schweiz. Als SV kennzeichnen und selbstbewusst bepreisen (K1 55 €). Volles Haus ausbauen: 1.123 Plätze, 85–95 % sind realistisch. Presse-Anker: Hier muss der Südkurier-Aufmacher entstehen, nicht bei den Ringen. Einziger Wermutstropfen: Terminkollision mit dem 1. Kammerkonzert am selben Abend – das Kammerkonzert verlegen."},
+ 6:{score:58,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,25,0],plaetze:417,auslastung:50,faktor:0.65,
+   text:"Kammerkonzerte sind Kulturauftrag, keine Erlösquelle: 180–330 Besucher, effektiv ~18 €/Ticket, planmäßiger Zuschussbedarf ~3.500–4.000 €. Völlig in Ordnung – aber NICHT am selben Abend wie Fitzek (27.11.). Die Kollision kostet beide Seiten Publikum und das Haus Glaubwürdigkeit. Bedingung: Termin verlegen, dann B."},
+ 7:{av:2,score:63,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
+   text:"Adventskomödie der Komödie am Altstadtmarkt am zweiten Adventswochenende – der Termin verkauft mit. Klassische Ringware für 50+, keine überregionale Sichtbarkeit, aber verlässliche Mechanik: Weihnachtsstimmung plus Komödienring-Basis. Bei 13.000 € Kosten und üblicher Komödien-Auslastung knapp unter Break-even. Buchen; die Gage liegt leicht über eurem Komödien-Schnitt – bei Vertragsschluss Richtung 12.000 € verhandeln."},
+ 8:{score:72,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:1684,auslastung:75,faktor:0.70,
+   text:"Kindertheater ist der stille Star des Hauses: 25/26 liefen Kinderproduktionen mit 640–840 Besuchern nahezu voll – getragen von Schulen und Kitas, nicht von Werbung. Zwei Vorstellungen (06.+07.12.) sind hier eingerechnet (1.684 Plätze). Über Schulmailings im September sichern. Bucht sich fast von selbst ein – A."},
+ 9:{av:2,score:82,prio:"A",rolle:"IMAGETREIBER",sv:false,preise:[42,36,30,24],plaetze:635,auslastung:70,faktor:0.78,
+   text:"Völlige Neubewertung: Deutschsprachige Premiere mit Nicholas Ofczarek – Burgtheater-Ikone, einem Millionenpublikum aus 'Der Pass' bekannt. Dass diese Premiere in Singen stattfindet und nicht in München oder Zürich, IST die Geschichte: überregional pressefähig (Feuilleton, nachtkritik), der Beleg für 'das Haus wacht auf'. Bei 10.500 € Gage ein Geschenk. Preise an die obere Rahmenkante (K1 42 €, Rahmen gäbe 50 her – bei Premieren-Framing vertretbar, notfalls SV prüfen). Auslastung 70 % konservativ, Ofczarek zieht auch Konstanz und Schweiz. Pflicht: 'Deutschsprachige Erstaufführung' in jede Zeile Kommunikation, Premierenabend inszenieren (Publikumsgespräch), Feuilleton-Einladungen bundesweit."},
+ 11:{score:90,prio:"A",rolle:"CASHCOW",sv:false,preise:[48,43,37,27],plaetze:1123,auslastung:95,faktor:0.65,
+   text:"Die verlässlichste Kasse des Hauses: 25/26 mit 1.086 von 1.088 Plätzen praktisch ausverkauft, effektiv ~26 €/Ticket. Voll auf 1.123 Plätze ausbauen, Neujahrspreise (Rahmen-Obergrenze) ausschöpfen. Erwarteter Überschuss ~15.000–17.000 € – finanziert zwei Kammerkonzerte und ein Wagnis. Nummerierungs-Chaos mit dem '3. Symphoniekonzert' (01.04.) vor Drucklegung bereinigen."},
+ 13:{av:2,score:73,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[40,35,29,22],plaetze:815,auslastung:52,faktor:0.80,
+   text:"Urban Dance von Landgraf als TOURNEE-PREMIERE – das dreht die Altlisten-Sorge 'fragwürdig wegen anderer Städte' um: Singen ist zuerst dran, die anderen Städte werben danach für einen Abend, den es hier schon gab. 'Tournee-Auftakt' aktiv kommunizieren (Landgraf liefert dafür erfahrungsgemäß Pressematerial und ggf. Ensemble-Präsenz). Zielgruppe Familien und U30, zweites Jugend-Signal neben Techno Ballet. Kalkulatorischer Zuschuss ~2.800 € = Preis fürs Imagesignal, als Premiere gut angelegt. Schriftlich absichern, dass keine Bodensee-Städte in den ersten Tourneewochen folgen."},
+ 14:{score:67,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
+   text:"Zeitgeist-Stoff (Video-Schiedsrichter, Wahrheit im Sport) mit seltener Chance: Männer 35–60 ins Theater holen – eine Zielgruppe, die das Haus praktisch nie erreicht. Kooperation mit Fußballvereinen/Sportkreis, Sportredaktion des Südkurier gezielt einladen. Ring-Zuschuss ~3.000 €, strategisch gut angelegt."},
+ 15:{score:58,prio:"B",rolle:"PFLEGE",sv:false,preise:[36,31,25,0],plaetze:417,auslastung:50,faktor:0.65,
+   text:"Kammerkonzert-Ringversorgung, planmäßiger Zuschuss ~3.500 €. Künstlerische Profilierung wäre über Programmatik möglich (ein zeitgenössischer Akzent pro Konzert), kostet nichts extra."},
+ 16:{score:76,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:80,faktor:0.70,
+   text:"Pumuckl ist eine Selbstläufer-Marke mit frischem Rückenwind aus der Serien-Neuauflage. Eine Vorstellung ist hier gerechnet – die offene zweite Vorstellung (Dienstag) unbedingt fixieren: ~3.000–4.000 € Zusatzerlös bei minimalen Mehrkosten, Schulen füllen Vormittage verlässlich. Mit zweiter Vorstellung deutlich im Plus."},
+ 17:{score:62,prio:"B",rolle:"BASIS",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:52,faktor:0.75,
+   text:"Solide Landgraf-Tourware für den Schauspielring. Erfüllt den Ring, bewegt nichts. Zuschuss ~3.000 € einkalkuliert. Buchen, keine Sonderanstrengung."},
+ 18:{score:66,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
+   text:"Komödie über ein Pflege-/Familienthema – trifft die Lebensrealität des 55+-Kernpublikums, gute Mundpropaganda-Mechanik. Etwa kostendeckend. Die Altlisten-Notiz zur Gage (10.100 €) vor Vertragsabschluss prüfen."},
+ 19:{score:58,prio:"B",rolle:"PFLEGE",sv:false,preise:[36,31,25,0],plaetze:417,auslastung:50,faktor:0.65,
+   text:"Drittes Kammerkonzert, gleiche Logik: Kulturauftrag mit ~3.500 € planmäßigem Zuschuss. Der Dreier-Zyklus hält das Abo stabil – hier nicht sparen, aber auch nichts erwarten."},
+ 20:{score:62,prio:"B",rolle:"BASIS",sv:false,preise:[42,36,29,19],plaetze:847,auslastung:58,faktor:0.70,
+   text:"Symphonischer Saisonabschluss, etwa kostendeckend. Die Doppel-Nummerierung mit dem Neujahrskonzert ('3. Symphoniekonzert' am 08.01. UND 01.04.) muss vor jeder Veröffentlichung bereinigt sein."},
+ 21:{score:71,prio:"B",rolle:"CASHCOW",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:62,faktor:0.78,
+   text:"Glattauer-Fortsetzung ('Gut gegen Nordwind' lief 25/26 mit 519 Besuchern und 11.500 € Umsatz nachweislich gut in Singen). Bekannter Stoff, treues Publikum 45+, niedrige Gage – beste Gewinnchance unter den Sprechtheater-Titeln, erwartet +3.000 bis +4.000 €."},
+ 22:{av:2,score:64,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:55,faktor:0.78,
+   text:"Tim Firths schwarze Komödie ('Neville's Island') – vom Autor von 'Calendar Girls': Vier Mittelmanager stranden beim Teambuilding-Wochenende im Novembernebel, Rivalitäten eskalieren, bitterböse komisch. Gehobener Boulevard mit Substanz, Ensemble ohne Star – der 'Calendar Girls'-Autor gehört deshalb in jede Ankündigung. Die Teambuilding-Satire ist eine Steilvorlage für Firmenkontingente an die Singener Industrie. Termin 04.05. liegt spät (Freiluft-Konkurrenz), Kosten leicht über KÖ-Schnitt – nachverhandeln. Erwartung: knapp unter Break-even."},
+ 23:{av:2,score:80,prio:"B",rolle:"IMAGETREIBER",sv:true,preise:[49,43,37,29],plaetze:900,auslastung:62,faktor:0.85,
+   text:"Der Frühjahrs-Leuchtturm der Saison – Besetzung bestätigt: Nicholas Ofczarek und Robert Palfrader, dazu Matthias Jakisic (der auch bei der Prag-Premiere spielt). Zwei der bekanntesten Bühnen-/TV-Gesichter Österreichs auf einer Bühne, Produktion mit Wiener Renommee – in dieser Region konkurrenzlos, und der zweite Ofczarek-Abend macht daraus die erzählbare Klammer der Saison ('Ofczarek in Singen', Oktober bis Mai). Die 21.000 € Gage sind im 635er-Ring-Setup nicht einspielbar; die Lösung ist, groß zu denken: als SV führen, 900 Plätze einrichten, Premium-Preise (K1 49 €), Schweiz/Konstanz aktiv bewerben – Break-even bei ~69 % (617 Tickets), erwartet ~−1.500 bis −3.000 € bei maximalem Imageertrag. Bedingungen: Ofczarek-Klammer ab Saisonstart im Marketing aufbauen, Kombiticket mit der Prag-Premiere (−15 %) auflegen."}
+};
+const ROLLEN_INFO = {CASHCOW:"trägt die Saison wirtschaftlich", IMAGETREIBER:"zahlt auf Sichtbarkeit & neue Zielgruppen ein", BASIS:"Ringversorgung, solide", PFLEGE:"Kulturauftrag & Stammpublikum", RISIKO:"wirtschaftlich kritisch", UNGEKLÄRT:"Daten fehlen"};
+
+/* Vorgaben für Produktionen, die das Team direkt im Tool angelegt hat (Zuordnung über den Titel).
+   av = Analyse-Version: höhere Version ersetzt gespeicherte ältere Einschätzungen automatisch. */
+const TITEL_VORGABEN = [
+ ["zürich chambers", {av:3,score:58,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,26,20],plaetze:550,auslastung:55,faktor:0.80,
+   text:"Nebenkosten sind auf 3.000 € korrigiert – damit normale Nischenpflege (~−2.000 €) statt Zuschussfall, und das einzige Chorformat der Saison bleibt eine echte Portfolio-Ergänzung (aktive Laienchorszene im Hegau, Vertrieb über Chorverbände und Kirchengemeinden). ABER: Der Termin 18.03. kollidiert mit dem 3. Kammerkonzert – zwei Klassik-Nischenformate am selben Abend nehmen sich gegenseitig das ohnehin kleine Publikum. Bedingung für ein Ja: einen der beiden Termine verlegen. Bis dahin Priorität C – der Konflikt ist hausgemacht und lösbar."}],
+ ["kreutzer", null],
+ ["streichquintett", {av:3,score:66,prio:"B",rolle:"PFLEGE",sv:false,preise:[40,34,28,0],plaetze:417,auslastung:60,faktor:0.70,
+   text:"Neubewertung nach der Straffung der Kammerreihe: Als eines von nur noch zwei Kammerformaten kannibalisiert das Quintett nichts mehr, sondern ersetzt die gestrichenen Konzerte würdig – und zwar mit dem stärksten Kammerprogramm seit Jahren: Berliner-Philharmoniker-Besetzung plus Concertgebouw-Solocellistin, kluge Dramaturgie (Beethoven–Tolstoi–Janáček, Stummfilm-Projektion), Feuilleton-tauglich. Wirtschaftlich bleibt es Kulturauftrag: erwarteter Zuschuss ~5.000 €, etwas über dem alten Kammer-Niveau. Die Film-Story ins Marketing (VHS, Literaturkreise, Kino-Kooperation), dann sind auch 70 % drin."}],
+ ["lehrerzimmer", {av:3,score:72,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[38,33,27,21],plaetze:635,auslastung:62,faktor:0.75,
+   text:"Kluger Neuzugang: 'Das Lehrerzimmer' trägt die Marke des Oscar-nominierten Kinoerfolgs – ein Zeitgeist-Stoff (Wahrheit, Misstrauen, Eskalation im System Schule), der weit über das Ring-Publikum hinaus anschlussfähig ist. Zielgruppen: 40–65, Lehrkräfte, Bildungsbürgertum; Kooperationspotenzial mit Schulamt, GEW, Elternbeiräten – ein Themenabend mit Nachgespräch hebt die Auslastung spürbar. A.gon ist verlässliche Tourneequalität. Bei 13.190 € Kosten und 60–65 % bleibt ein kalkulierter Zuschuss von ~3.500–4.500 € – für den zweitstärksten Schauspiel-Stoff der Saison (nach der Ofczarek-Premiere) gut angelegt. Die AVA-/Bearbeitungsabgabe ist sauber erfasst."}],
+ ["lustigen weiber", {av:3,score:66,prio:"B",rolle:"BASIS",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:55,faktor:0.78,
+   text:"Zurück im Plan, jetzt mit belastbaren Zahlen – und als günstigste Komödien-Position (9.200 € inkl. sauber aufgeschlüsselter Musik-/AVA-Abgaben) die wirtschaftlich attraktivste: Bei üblicher Komödien-Auslastung bleibt ein erwartetes Plus von ~2.000–2.500 €. Shakespeare-Boulevard vom Altstadtmarkt, verlässliche 50+-Ware, Februar-Termin unkritisch. Buchen – eine der wenigen Positionen, die die Saisonbilanz entlasten."}],
+ ["schwarzer teufel", {av:3,score:64,prio:"C",rolle:"IMAGETREIBER",sv:false,preise:[40,34,28,22],plaetze:635,auslastung:55,faktor:0.75,
+   text:"Devid Striesow bringt echte Doppel-Zugkraft (Tatort, 'Die Fälscher', 'Ich bin dann mal weg'), Gioia Osthoff den BW-Bezug (Theater Freiburg), BOW ist euer bewährter Partner – aber mit real 15.000 € Kosten ist der Freud-Kammerspielabend teurer als kalkuliert und trifft dasselbe bildungsbürgerliche 55+-Segment wie eure übrigen Literatur-/Kammerformate. Erwarteter Zuschuss ~6.500–7.000 €. Bei −103.890 € Budgetüberzug gilt verschärft: NUR als Ersatz sinnvoll (Tauschkandidat: Kardinalfehler, Score 62, ähnliche Kosten, keine Marke), nicht zusätzlich. Zwei Hebel: BOW-Dreierpaket verhandeln (Prag + Große Zeit + Teufel) und Termin klären – die Produktion braucht noch ein Datum."}],
+ ["mazou", null],
+ ["masou", {av:3,score:62,prio:"C",rolle:"IMAGETREIBER",sv:true,preise:[32,28,24,20],plaetze:600,auslastung:58,faktor:0.85,
+   text:"Neoklassik-/Ambient-Duo aus dem Nordschwarzwald mit Streicherensemble – bedient exakt den Candlelight-Trend und erreicht Publikum 30–55, das sonst nicht ins Haus kommt. Mit den eingetragenen 11.000 € Kosten (Gage 8.000) liegt es über meinem Schätzband für ein regionales Ensemble ohne Marken-Zugkraft: Erwarteter Zuschuss ~3.000 €, Break-even erst bei ~75 %. Als SV mit freien Preisen führen und als Kerzenlicht-/Erlebnisformat inszenieren – der Name verkauft nichts, das Erlebnis muss es tun (Social-first, Licht, Bühnenbild; die Kirchenatmosphäre ist Teil des Produkts). Bedingungen: Gage Richtung 6.000 € verhandeln oder Erlebnis-Produktion konsequent budgetieren; Termin in die dünne Strecke Februar–April legen. Dann ein sinnvolles günstiges Experiment als Techno-Nachfolger."}]
+];
+TITEL_VORGABEN[1][1] = TITEL_VORGABEN[2][1];
+TITEL_VORGABEN[5][1] = TITEL_VORGABEN[6][1];
+function vorgabeFuer(v){
+  if(ANALYSE_VORGABEN[v.vid]) return ANALYSE_VORGABEN[v.vid];
+  const t = (v.titel||"").toLowerCase();
+  const hit = TITEL_VORGABEN.find(([m])=>t.includes(m));
+  return hit ? hit[1] : null;
+}
+function analyseVon(v){
+  if(!daten.analyse) daten.analyse = {};
+  const vg = vorgabeFuer(v);
+  const vorhanden = daten.analyse[v.vid];
+  if(!vorhanden || (vg && (vorhanden.av||0) < (vg.av||0))){
+    const sv = SPARTEN_VORGABE[v.sparte];   /* v5: Startwerte je Sparte, falls keine Einzelvorgabe existiert */
+    daten.analyse[v.vid] = vg ? JSON.parse(JSON.stringify(vg)) :
+      Object.assign({score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false, preise:[39,34,28,19], plaetze:838, auslastung:55, faktor:0.75,
+       text:"Neu angelegte Produktion – Analysewerte bitte prüfen und anpassen (Vorbelegung: Standardannahmen)."},
+       sv ? JSON.parse(JSON.stringify(sv)) : {});
+  }
+  return daten.analyse[v.vid];
+}
+/* Geprüfte Kandidaten – analysiert, aber noch nicht in der Planung (aktuell leer:
+   Masou & Leise und Mein schwarzer Teufel wurden in die Planung übernommen und
+   werden dort per Titel-Zuordnung mit Volltext-Analysen versehen) */
+const KANDIDATEN = [];
+const KAT_MIX = [0.30,0.30,0.25,0.15];
+function wirtschaft(v){
+  const a = analyseVon(v);
+  const brutto = a.preise.reduce((s,p,i)=>s+(+p||0)*KAT_MIX[i],0);
+  const eff = brutto * (+a.faktor||0.75);
+  const tickets = Math.round((+a.plaetze||0) * (+a.auslastung||0) / 100);
+  const erloes = Math.round(tickets * eff);
+  const kosten = gesamt(v);
+  const be = eff>0 && a.plaetze>0 ? Math.round(kosten/eff/(+a.plaetze)*100) : null;
+  return {eff, tickets, erloes, kosten, ergebnis: erloes-kosten, breakeven: be};
+}
+function analyseAendern(vid, feld, wert, idx){
+  const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+  const a = analyseVon(v);
+  if(feld==="preis") a.preise[idx] = Math.max(0, +wert||0);
+  else if(feld==="sv") a.sv = !!wert;
+  else if(feld==="faktor") a.faktor = Math.min(1, Math.max(0.3, +String(wert).replace(",",".")||0.75));
+  else a[feld] = Math.max(0, +wert||0);
+  speichern(); zeigeAnalyse();
+}
+function saisonBilanz(){
+  const aktiv = daten.veranstaltungen.filter(zaehltBudget);
+  let erloes=0, kosten=0, ungeklaert=0;
+  const delta = pp => aktiv.reduce((s,v)=>{
+    const a=analyseVon(v);
+    const brutto=a.preise.reduce((x,p,i)=>x+(+p||0)*KAT_MIX[i],0)*(+a.faktor||0.75);
+    return s+Math.round((+a.plaetze||0)*Math.min(100,Math.max(0,(+a.auslastung||0)+pp))/100*brutto);
+  },0);
+  aktiv.forEach(v=>{
+    const w = wirtschaft(v);
+    erloes += w.erloes; kosten += w.kosten;
+    if(analyseVon(v).rolle==="UNGEKLÄRT") ungeklaert++;
+  });
+  return {erloes, kosten, ergebnis: erloes-kosten, worst: delta(-10)-kosten, best: delta(10)-kosten, ungeklaert};
+}
+function zeigeAnalyse(){
+  const b = saisonBilanz();
+  const liste = sortiert().filter(zaehltBudget);
+  const karten = liste.map(v=>{
+    const a = analyseVon(v), w = wirtschaft(v);
+    const kammer = v.sparte==="Kammerkonzert";
+    return `<div class="akarte">
+      <div class="akopf">
+        <span class="score prio${a.prio}">${a.score||"–"}</span>
+        <div><b style="font-size:16px">${v.titel}</b><div class="fussnote">${datumDE(v.datum)} · ${v.sparte} · Kosten ${euro(w.kosten)} · Priorität ${a.prio}</div></div>
+        <span style="flex:1"></span>
+        <span class="rolle">${a.rolle}</span>
+      </div>
+      <div class="atext">${a.text}</div>
+      <div class="preiszeile fussnote" style="margin:8px 0;">
+        <b>Preisempfehlung:</b>
+        K1 <input type="number" value="${a.preise[0]}" onchange="analyseAendern(${v.vid},'preis',this.value,0)"> €
+        K2 <input type="number" value="${a.preise[1]}" onchange="analyseAendern(${v.vid},'preis',this.value,1)"> €
+        K3 <input type="number" value="${a.preise[2]}" onchange="analyseAendern(${v.vid},'preis',this.value,2)"> €
+        ${kammer?"":`K4 <input type="number" value="${a.preise[3]}" onchange="analyseAendern(${v.vid},'preis',this.value,3)"> €`}
+        &nbsp; <label><input type="checkbox" ${a.sv?"checked":""} onchange="analyseAendern(${v.vid},'sv',this.checked)" style="width:auto"> SV (freie Preise)</label>
+        ${a.sv?'<span class="pille sgebucht">SV – Tableau-Rahmen gilt nicht</span>':'<span class="fussnote">Rahmen lt. Entgeltordnung beachten</span>'}
+      </div>
+      <div class="araster">
+        <div class="afeld">Plätze eingerichtet<br><input type="number" value="${a.plaetze}" onchange="analyseAendern(${v.vid},'plaetze',this.value)"> <span class="fussnote">max 1123</span></div>
+        <div class="afeld">Erwartete Auslastung<br><input type="number" value="${a.auslastung}" onchange="analyseAendern(${v.vid},'auslastung',this.value)"> %</div>
+        <div class="afeld">Erlösfaktor (Abo/Erm.)<br><input type="text" value="${String(a.faktor).replace(".",",")}" onchange="analyseAendern(${v.vid},'faktor',this.value)"></div>
+        <div class="afeld">Tickets erwartet<br><b>${w.tickets}</b> <span class="fussnote">à ${w.eff.toFixed(2).replace(".",",")} € eff.</span></div>
+        <div class="afeld">Ticketerlös erwartet<br><b>${euro(w.erloes)}</b></div>
+        <div class="afeld">Break-even<br><b>${w.breakeven===null?"–":(w.breakeven>100?'<span class="ergVerlust">'+w.breakeven+' % – unerreichbar</span>':w.breakeven+" % Auslastung")}</b></div>
+        <div class="afeld">Erwartetes Ergebnis<br><b class="${w.ergebnis>=0?"ergGewinn":"ergVerlust"}">${w.ergebnis>=0?"+":""}${euro(w.ergebnis)}</b></div>
+      </div>
+    </div>`;
+  }).join("");
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Strategische Analyse Saison ${daten.saisonAktuell}</h2>
+    <div class="hinweis"><b>Was diese Saison spricht:</b> Sie trägt eine echte Premieren-Handschrift: eine deutschsprachige Erstaufführung mit Nicholas Ofczarek (Weihnachten in Prag), eine Tournee-Premiere (Brodas), Fitzek als Massenanker und die Ofczarek-Klammer bis in den Mai (Die Große Zeit). Das ist die Erzählung „das Haus wacht auf" – sie steht aber nirgends drauf: Ohne konsequentes Premieren-Framing in Programmheft, Presse und Social bleibt es ein klassisches Ring-Programm mit teuren Gästen. Nach der Techno-Absage (richtig entschieden: schlechtestes Kosten-Nutzen-Verhältnis des Plans) hängt das junge Publikum allein an Brodas – die frei gewordenen Mittel decken die Budgetlücke, ersetzen aber kein Signal; ein günstiges Experiment für Februar–April steht unter den Kandidaten unten. Die Abo-Basis erodiert strukturell (−37 % Plätze seit 2020, Neuanmeldungen −65 %, überwiegend demografisch = nicht rückholbar): Der Freiverkauf und die wachsenden Kombi-Pakete müssen die Erzählung tragen – sie gehören in jede Kampagne.</div>
+    <h3>Saisonbilanz (Ticketerlöse vs. Gagen + Nebenkosten)</h3>
+    <div class="karten">
+      <div class="karte"><div class="wert">${euro(b.kosten)}</div><div class="label">Produktionskosten (ohne „abgesagt")</div></div>
+      <div class="karte"><div class="wert">${euro(b.erloes)}</div><div class="label">Erwartete Ticketerlöse</div></div>
+      <div class="karte" style="${b.ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${b.ergebnis>=0?"ergGewinn":"ergVerlust"}">${b.ergebnis>=0?"+":""}${euro(b.ergebnis)}</div><div class="label">Erwartetes Saisonergebnis</div></div>
+      <div class="karte"><div class="wert" style="font-size:19px">${euro(b.worst)} / ${euro(b.best)}</div><div class="label">Spanne: alle −10 / +10 Punkte Auslastung</div></div>
+    </div>
+    <div class="warnbox">Diese Rechnung vergleicht nur Ticketerlöse mit Gagen und Nebenkosten – Hauskosten (Personal, Technik, Energie) und Marketing sind nicht enthalten. ${b.ungeklaert>0?`<b>${b.ungeklaert} Produktion(en) stehen ohne Gage in der Bilanz</b> – das tatsächliche Risiko liegt um schätzungsweise 25.000–35.000 € höher.`:""} Ein moderates Saison-Defizit ist bei diesem Auftrag kein Versagen: Fitzek und Neujahrskonzert finanzieren die Imagetreiber quer – das ist die Währung „Aufmerksamkeit", von der du sprichst, nur ehrlich beziffert.</div>
+    <h3>Hebel zur Ergebnisverbesserung bei Verlust-Produktionen</h3>
+    <div class="hinweis"><b>1. Gagenmodell wandeln:</b> Bei teuren Wagnissen (Techno Ballet) Festgage in Sockel + Einnahmenbeteiligung umverhandeln – verlagert Risiko zum Veranstalter-Partner, der an seine Zugkraft glaubt. <b>2. Zweitvorstellungen:</b> Wo die Anreise bezahlt ist, kostet die zweite Vorstellung fast nichts (Pumuckl-Dienstag fixieren ≈ +3.500 €; bei Kinderproduktionen Schulvormittage). <b>3. Förderung &amp; Sponsoring:</b> Junge Formate (Techno, Brodas) sind förderfähig – Landesprogramme BW für zeitgenössische Formate, Kulturstiftungen, lokale Banken/Industrie als Format-Paten (realistisch 5.000–10.000 € pro Saison). <b>4. Nebenkosten drücken:</b> Übernachtung/Catering über lokale Partner gegen Sichtbarkeit – bei den großen NK-Pauschalen sind 10–20 % drin. <b>5. Cross-Selling:</b> Ofczarek-Kombiticket (Prag + Große Zeit, −15 %) bindet Freiverkauf früh; Kombi 4/6 in jede Kampagne. <b>6. B2B &amp; Gruppen:</b> Firmenkontingente an Singener Industrie, Schulen für Der Sohn/Videobeweis, Vereine für Brodas. <b>7. Raummodularität:</b> Lieber klein einrichten und ausverkauft melden als groß und halb leer – „ausverkauft" ist Marketing für die Folgesaison. <b>8. Kammerkonzerte ehrlich führen:</b> Zuschuss ist Kulturauftrag – Ziel ist Deckelung (max. ~3.500 €/Konzert), nicht Break-even-Illusion.</div>
+    ${KANDIDATEN.length===0?"":`<h3>Geprüfte Kandidaten – analysiert, noch nicht in der Planung</h3>`}
+    ${KANDIDATEN.map(k=>`<div class="akarte">
+      <div class="akopf"><span class="score prio${k.prio}">${k.score}</span>
+      <div><b style="font-size:16px">${k.titel}</b><div class="fussnote">Kandidat · Priorität ${k.prio}</div></div>
+      <span style="flex:1"></span><span class="rolle">${k.rolle}</span></div>
+      <div class="atext">${k.text}</div></div>`).join("")}
+    ${plausiHTML()}
+    ${saisonverlaufHTML()}
+    <h3>Alle Produktionen (${liste.length}) – Score, Rolle, Preise, Wirtschaftlichkeit</h3>
+    <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Alle Annahmen (Plätze, Auslastung, Preise, Erlösfaktor) sind direkt editierbar – die Bilanz oben rechnet sofort mit. Der Erlösfaktor bildet ab, dass Abos und Ermäßigungen den Kassenpreis verwässern (kalibriert an euren 25/26-Istwerten).</p>
+    ${karten}`;
+}
+
+
+/* ================= MARKTFORSCHUNG ================= */
+function zeigeMarkt(){
+  /* Genrestärke: reale Durchschnitts-Auslastung und Effektiverlöse der Saison 25/26 (Archiv Mediaplaner) */
+  const genres = [
+    ["Kindertheater", 90, 8.0, "Schulen und Kitas füllen verlässlich – stärkstes Genre des Hauses"],
+    ["Neujahrskonzert", 100, 25.8, "praktisch ausverkauft, höchster Effektiverlös"],
+    ["Komödie", 67, 22.5, "verlässlicher Kern des Freiverkaufs, 450–680 Besucher"],
+    ["Musik/Show", 65, 26.0, "stark bei bekannten Namen, schwach ohne (42–91 % Spannweite)"],
+    ["Symphoniekonzert", 63, 19.7, "abo-getragen, stabil, wenig Freiverkaufs-Hebel"],
+    ["Kammerkonzert", 57, 18.0, "Kulturauftrag – kleinstes Publikum, treuestes Publikum"],
+    ["Schauspiel", 56, 21.0, "schwächstes Genre im Freiverkauf – trägt nur mit Marke oder Star"]
+  ];
+  const konkurrenz = [
+    ["Stadthalle Tuttlingen", "~30 Min", "nahezu identisches Gastspielprofil (Theater, Comedy, Klassik)", "hoch"],
+    ["Milchwerk Radolfzell", "~15 Min", "Gastspiele, Comedy, Vorträge – direktester Nachbar", "hoch"],
+    ["Stadttheater Schaffhausen", "~20 Min (CH)", "gemischtes Gastspielprogramm, zieht deutsches Grenzpublikum", "hoch"],
+    ["Stadttheater Konstanz", "~30 Min", "Eigenproduktionen Schauspiel, festes Ensemble", "mittel"],
+    ["Bodenseeforum Konstanz", "~30 Min", "Comedy, Shows, Kongresse", "mittel"],
+    ["Theater am Ring / Franziskaner VS", "~35 Min", "Gastspiele Theater und Klassik", "mittel"],
+    ["GZH Friedrichshafen", "~50 Min", "große Shows, Klassik, Comedy", "mittel"],
+    ["Theater Winterthur", "~45 Min (CH)", "größtes Gastspielhaus der Ostschweiz, hohes Niveau", "mittel"],
+    ["Konzerthaus Ravensburg", "~60 Min", "Klassik-Schwerpunkt", "niedrig"],
+    ["Zürich (Opern-/Schauspielhaus u. a.)", "~50 Min (CH)", "Weltklasse-Sog für Premium-Publikum – nicht einholbar, nur umgehbar", "strukturell"]
+  ];
+  const zielgruppen = [
+    ["Stammpublikum 55+", "Kern des Hauses", "Solide Kaufkraft, hohe Verfügbarkeit, aber demografisch schrumpfend (Abo −37 % seit 2020). Reagiert auf Vertrautes plus Qualität – Stars, bekannte Stoffe, Ringe."],
+    ["Familien (30–50 m. Kindern)", "Volumenbringer", "Preissensibel, aber verlässlich über Schulen/Kitas mobilisierbar – belegt durch 90 % Kinder-Auslastung. Niedrige Preise, hohe Stückzahl."],
+    ["Berufstätige 30–55", "größtes ungenutztes Potenzial", "Kaufkraft vorhanden, kommt nur für Erlebnis und Marke (Fitzek, Candlelight-Formate, Zeitgeist-Stoffe). Erreichbar über Social, nicht über Abo."],
+    ["Schweizer Grenzgänger/Gäste", "Premium-Chance", "Höchste Kaufkraft der Region, deutsche Preise wirken günstig – kommt aber nur bei überregionalem Anlass (Ofczarek, Fitzek). Braucht gezielte CH-Kanäle."],
+    ["U30 / Szene", "strategische Zukunft", "Begrenzte Kaufkraft, hohe Erlebnisbereitschaft. Ohne eigenes Format (Urban, Elektro, Comedy) bleibt diese Gruppe komplett bei Zürich/Konstanz."]
+  ];
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Marktforschung – Region Singen/Hegau/Bodensee</h2>
+    <div class="warnbox"><b>Regionale Marktlage Singen/Hegau:</b> Der Standort operiert nachweislich in einem strukturell anspruchsvolleren Markt als vergleichbare Tourneehäuser. Erstens die Nachfragebasis: Die Abo-Auswertung belegt eine Erosion der gebundenen Nachfrage um −37 % seit 2020 (Plätze) bei −65 % Neuanmeldungen seit 2019 – überwiegend demografisch bedingt und damit nicht rückgewinnbar; jede Produktion muss heute einen größeren Anteil ihres Publikums im Freiverkauf erobern als noch vor fünf Jahren. Zweitens die Wettbewerbsdichte: Konstanz, Schaffhausen, Winterthur und Zürich liegen in Pendeldistanz und schöpfen das kaufkräftige, mobile Kultursegment ab – dieselbe Grenznähe, die beim Verkauf hilft (Schweizer Gäste), wirkt beim Stammpublikum als Abfluss. Drittens die Standortökonomie: Singen ist Industrie-Mittelzentrum mit Kaufkraft unter dem Niveau der Bodensee-Uferlagen, und die touristischen Ströme enden am See, nicht im Hegau. Konsequenz für dieses Tool: Tournee-Auslastungswerte anderer Städte sind auf Singen nicht übertragbar; alle Auslastungsannahmen unten sind an den tatsächlichen Ist-Werten des Hauses aus 25/26 kalibriert. Was sich daraus ableitet: Produktionen brauchen hier entweder gebundene Nachfrage (Ringe, Schulen), überregionale Zugkraft (Stars, Premieren) oder ein Alleinstellungsmerkmal im Umkreis – reine Katalogware trägt sich in diesem Markt nicht mehr.</div>
+    <h3>Einzugsgebiet (Näherungswerte)</h3>
+    <div class="karten">
+      <div class="karte"><div class="wert">~48.000</div><div class="label">Einwohner Singen (Kernstadt)</div></div>
+      <div class="karte"><div class="wert">~290.000</div><div class="label">Landkreis Konstanz gesamt</div></div>
+      <div class="karte"><div class="wert">~30 Min</div><div class="label">Fahrzeit-Radius: Hegau, westl. Bodensee, Schaffhausen (CH)</div></div>
+      <div class="karte"><div class="wert">1.123</div><div class="label">max. Platzkapazität (modular anpassbar)</div></div>
+    </div>
+    <h3>Genrestärke – reale Durchschnitts-Auslastung Saison 25/26 (eigene Ist-Daten)</h3>
+    ${genres.map(([g,a,e,txt])=>`
+      <div class="balkenzeile"><div class="bname">${g}</div>
+      <div class="balken"><div style="width:${a}%;${a>=75?"background:var(--gruen)":a<60?"background:var(--gelb)":""}"></div></div>
+      <div class="bwert">${a} % · ${String(e).replace(".",",")} €/Ticket</div></div>
+      <p class="fussnote" style="margin:0 0 8px 160px">${txt}</p>`).join("")}
+    <div class="hinweis"><b>Lesart:</b> Grün = trägt sich selbst, gelb = braucht Begründung. Effektiverlös = tatsächlicher Erlös je Besucher nach Abo-/Ermäßigungs-Verwässerung. Diese Zahlen sind die verlässlichste Marktforschung, die es für Singen gibt – es sind eure eigenen Kassen-Istwerte.
+      Für das <b>Lesekonzert</b> fehlt diese Grundlage noch: Das Format gab es 25/26 nicht, die Plausibilitätsprüfung in der Analyse rechnet deshalb mit 56 % als Näherung
+      aus dem literarisch-sprechtheatralen Segment. Nach dem ersten Abend gehört dort der echte Wert hinein.</div>
+    <h3>Kaufkraft und Erreichbarkeit nach Zielgruppen (strategische Einschätzung)</h3>
+    ${zielgruppen.map(([z,rolle,txt])=>`<div class="akarte"><div class="akopf"><b style="font-size:15px">${z}</b><span style="flex:1"></span><span class="rolle">${rolle.toUpperCase()}</span></div><div class="atext">${txt}</div></div>`).join("")}
+    <h3>Konkurrenzsituation im Einzugsgebiet</h3>
+    <table><tr><th>Haus / Ort</th><th>Entfernung</th><th>Schwerpunkt</th><th>Überschneidung</th></tr>
+      ${konkurrenz.map(([h,d,sp,ue])=>`<tr><td><b>${h}</b></td><td>${d}</td><td>${sp}</td>
+      <td><span class="pille ${ue==="hoch"?"sabgesagt":ue==="mittel"?"sangefragt":ue==="niedrig"?"sgebucht":"sIdee"}" style="text-decoration:none">${ue}</span></td></tr>`).join("")}
+    </table>
+    <p class="fussnote">Einschätzung auf Basis der öffentlichen Programmprofile – keine Erhebung. „Strukturell" = nicht direkt vergleichbar, wirkt aber als dauerhafter Publikums-Sog.</p>
+    <h3>Was daraus folgt</h3>
+    <div class="hinweis"><b>1.</b> Kindertheater ist euer nachweislich stärkstes Genre – ausbauen (Zweitvorstellungen, Schulnetz), nicht nur pflegen. <b>2.</b> Schauspiel trägt sich nur mit Marke oder Star – jede Schauspiel-Position ohne beides ist ein kalkulierter Zuschuss. <b>3.</b> Die Klassik-Nische nicht intern verdoppeln: zwei Nischenformate am selben Abend (18.03.) kannibalisieren sich gegenseitig. <b>4.</b> Tuttlingen, Radolfzell und Schaffhausen sind die realen Wettbewerber um dasselbe Gastspiel-Publikum – Exklusivfenster bei Agenturen gehören deshalb in jede Verhandlung. <b>5.</b> Die Schweiz ist keine Selbstverständlichkeit, sondern ein Premium-Kanal, der nur bei Star-Anlässen aktiviert werden kann – dann aber mit überdurchschnittlichen Preisen. <b>6.</b> Das größte ungenutzte Potenzial sind Berufstätige 30–55: erlebnisorientiert, kaufkräftig, nur über Social und Formate erreichbar – nicht über das Abo-System.</div>`;
+}
+
+/* ================= v4: DB1-KALKULATION JE PRODUKTION =================
+   Hausregel Stadthalle Singen: In den DB1 gehen ausschließlich produktionsspezifische
+   Fremdkosten (Gage/Beteiligung, Tantiemen, Transfer, Übernachtung, Catering, GEMA,
+   Sozialkasse, Sonderabgaben). Marketing, Aufbau/erweiterte Bestuhlung sowie Licht & Ton
+   sind NICHT enthalten – sie laufen über Haushalt und Hausinfrastruktur und werden auf
+   Saisonebene in einer Summe als Deckungsbedarf gegengerechnet.
+   Erlösseite: Bruttopreise (Kartenmix) → abzüglich USt und VVK-/Systemgebühr = Nettoerlös Haus. */
+function db1(v){
+  const a = analyseVon(v);
+  const brutto = a.preise.reduce((s,p,i)=>s+(+p||0)*KAT_MIX[i],0);
+  const effBrutto = brutto * (+a.faktor||0.75);
+  const tickets = Math.round((+a.plaetze||0) * (+a.auslastung||0) / 100);
+  const umsatzBrutto = Math.round(tickets * effBrutto);
+  const ustSatz = +daten.kalk.ust||0, vvkSatz = +daten.kalk.vvk||0;
+  const ust = Math.round(umsatzBrutto * ustSatz/(100+ustSatz));
+  const vvk = Math.round(umsatzBrutto * vvkSatz/100);
+  const netto = umsatzBrutto - ust - vvk;
+  const kosten = gesamt(v);
+  const proTicket = effBrutto * (1 - ustSatz/(100+ustSatz) - vvkSatz/100);
+  const beTickets = proTicket>0 ? Math.ceil(kosten/proTicket) : null;
+  const bePro = (beTickets!==null && (+a.plaetze||0)>0) ? Math.round(beTickets/(+a.plaetze)*100) : null;
+  return {brutto, effBrutto, tickets, umsatzBrutto, ust, vvk, netto, kosten, db1: netto-kosten, proTicket, beTickets, bePro};
+}
+function kalkParam(feld, wert){
+  const z = Math.max(0, +String(wert).replace(",",".")||0);
+  daten.kalk[feld] = z; speichern(); zeigeKalkulation();
+}
+function kalkAendern(vid, feld, wert){
+  const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+  const a = analyseVon(v);
+  a[feld] = Math.max(0, +wert||0);
+  speichern(); zeigeKalkulation();
+}
+function zeigeKalkulation(){
+  const liste = sortiert().filter(zaehltBudget);
+  let sNetto=0, sKosten=0, sDb1=0, sTickets=0, sUst=0, sVvk=0, sBrutto=0;
+  const zeilen = liste.map(v=>{
+    const k = db1(v), a = analyseVon(v);
+    sNetto+=k.netto; sKosten+=k.kosten; sDb1+=k.db1; sTickets+=k.tickets; sUst+=k.ust; sVvk+=k.vvk; sBrutto+=k.umsatzBrutto;
+    const beKlasse = k.bePro===null ? "" : (k.bePro>100 ? "ergVerlust" : (k.bePro>(+a.auslastung||0) ? "plus" : "minus"));
+    return `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
+      <td>${datumDE(v.datum)}<div class="fussnote">${wochentag(v.datum)}</div></td>
+      <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}
+        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
+        <span class="pille ${statusKlasse(v.status)}" style="font-size:11px">${statusText(v.status)}</span></div></td>
+      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:74px" value="${a.plaetze}" onchange="kalkAendern(${v.vid},'plaetze',this.value)"></td>
+      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:62px" value="${a.auslastung}" onchange="kalkAendern(${v.vid},'auslastung',this.value)"> %</td>
+      <td class="zahl">${k.tickets}</td>
+      <td class="zahl">${k.proTicket.toFixed(2).replace(".",",")} €</td>
+      <td class="zahl">${euro(k.netto)}</td>
+      <td class="zahl">${euro(k.kosten)}</td>
+      <td class="zahl"><b class="${k.db1>=0?"ergGewinn":"ergVerlust"}">${k.db1>=0?"+":""}${euro(k.db1)}</b></td>
+      <td class="zahl ${beKlasse}">${k.bePro===null?"–":k.bePro+" %"}${k.beTickets!==null?`<div class="fussnote">${k.beTickets} Tickets</div>`:""}</td>
+    </tr>`;
+  }).join("");
+  const deckung = +daten.kalk.deckungsbedarf||0;
+  const ergebnis = sDb1 - deckung;
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Kalkulation ${daten.saisonAktuell} – Deckungsbeitrag 1 je Produktion</h2>
+    <div class="hinweis"><b>Was hier gerechnet wird:</b> Vom erwarteten Ticketumsatz gehen Umsatzsteuer und VVK-/Systemgebühr ab –
+      übrig bleibt der Nettoerlös, den das Haus tatsächlich behält. Davon abgezogen werden ausschließlich die
+      <b>produktionsspezifischen Fremdkosten</b> (Gage plus alle erfassten Nebenkosten). Das ergibt den DB1.
+      Nach eurer Hausregel enthält der DB1 <b>kein Marketing, keinen Aufbau bzw. keine erweiterte Bestuhlung und kein Licht &amp; Ton</b> –
+      diese Kosten sind nicht produktionsspezifisch zurechenbar und werden unten in einer Summe als Deckungsbedarf gegengerechnet.</div>
+    <div class="parambox">
+      <div class="feld"><label>Umsatzsteuer auf Tickets</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.ust}" onchange="kalkParam('ust',this.value)"> %</div>
+      <div class="feld"><label>VVK-/Systemgebühr vom Bruttopreis</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.vvk}" onchange="kalkParam('vvk',this.value)"> %</div>
+      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" value="${deckung}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
+      <div class="fussnote" style="flex:1;min-width:220px;">Beide Sätze in Prozent. Hausvorgabe: 7&nbsp;% USt, 10&nbsp;% VVK-/Systemgebühr.
+        Der Deckungsbedarf ist die Summe aus Marketing, Aufbau/Bestuhlung und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
+    </div>
+    <div class="karten">
+      <div class="karte"><div class="wert">${euro(sNetto)}</div><div class="label">Nettoerlös Tickets · brutto ${euro(sBrutto)}, davon ${euro(sUst)} USt und ${euro(sVvk)} Gebühr</div></div>
+      <div class="karte"><div class="wert">${euro(sKosten)}</div><div class="label">Produktionsspezifische Fremdkosten (Gage + Nebenkosten)</div></div>
+      <div class="karte" style="${sDb1<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${sDb1>=0?"ergGewinn":"ergVerlust"}">${sDb1>=0?"+":""}${euro(sDb1)}</div><div class="label">Summe DB1 aller Produktionen</div></div>
+      <div class="karte" style="${ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${ergebnis>=0?"ergGewinn":"ergVerlust"}">${ergebnis>=0?"+":""}${euro(ergebnis)}</div><div class="label">Nach Abzug Deckungsbedarf (${euro(deckung)})</div></div>
+    </div>
+    ${deckung===0?'<div class="warnbox">Der <b>Deckungsbedarf steht auf 0</b>. Solange dort nichts eingetragen ist, zeigt die Summe nur die Produktionsebene – Marketing, Aufbau und Licht &amp; Ton fehlen komplett in der Rechnung. Trag den Saisonwert oben ein, dann stimmt das Gesamtbild.</div>':""}
+    <table class="kalkTab">
+      <tr><th>Datum</th><th>Produktion</th><th class="zahl">Plätze</th><th class="zahl">Auslastung</th><th class="zahl">Tickets</th>
+        <th class="zahl">Ø netto/Ticket</th><th class="zahl">Nettoerlös</th><th class="zahl">Fremdkosten</th><th class="zahl">DB1</th><th class="zahl">Break-even</th></tr>
+      ${zeilen}
+      <tr class="summe"><td colspan="4">Summe ${liste.length} Produktionen</td>
+        <td class="zahl">${sTickets}</td><td class="zahl">–</td><td class="zahl">${euro(sNetto)}</td>
+        <td class="zahl">${euro(sKosten)}</td><td class="zahl">${sDb1>=0?"+":""}${euro(sDb1)}</td><td class="zahl">–</td></tr>
+      <tr class="summe"><td colspan="8">./. Deckungsbedarf Saison (Marketing, Aufbau/Bestuhlung, Licht &amp; Ton)</td>
+        <td class="zahl">− ${euro(deckung)}</td><td class="zahl">–</td></tr>
+      <tr class="ergebnis"><td colspan="8">Ergebnis Saison ${daten.saisonAktuell} nach Deckungsbedarf</td>
+        <td class="zahl">${ergebnis>=0?"+":""}${euro(ergebnis)}</td><td class="zahl">–</td></tr>
+    </table>
+    <p class="fussnote">Plätze und Auslastung sind hier direkt änderbar – es sind dieselben Werte wie im Reiter <b>Analyse</b>, eine Änderung wirkt in beiden Ansichten.
+      Preise, Kartenmix und Erlösfaktor werden in der Analyse gepflegt. Break-even = Auslastung, ab der der DB1 auf null steht.
+      Grün eingefärbte Break-even-Werte liegen unter der angenommenen Auslastung, rote darüber.</p>
+    <div class="warnbox"><b>Eine Einschränkung, die du kennen musst:</b> Der Erlösfaktor stammt aus der Analyse und ist an den
+      tatsächlichen Erlösen je Besucher aus 25/26 kalibriert. Falls diese Istwerte bereits Nettowerte waren, zieht diese Rechnung
+      USt und Gebühr ein zweites Mal ab und rechnet die Saison zu schlecht. Prüf das einmal an einer abgerechneten Produktion gegen –
+      falls es so ist, setzt du die beiden Sätze oben einfach auf 0 und arbeitest weiter mit dem Erlösfaktor allein.</div>`;
+}
+
+/* ================= v4: PLAUSIBILITÄT & SAISONVERLAUF (Ergänzung der Analyse) ================= */
+function istWertFuer(v){
+  if((v.titel||"").toLowerCase().indexOf("neujahr")>-1) return 100;
+  const i = GENRE_IST[v.sparte];
+  return i===undefined ? null : i;
+}
+function plausiHTML(){
+  const liste = sortiert().filter(zaehltBudget);
+  const zeilen = liste.map(v=>{
+    const a = analyseVon(v), ist = istWertFuer(v);
+    if(ist===null) return null;
+    const d = (+a.auslastung||0) - ist;
+    const stufe = d<=0 ? "Gruen" : (d<=10 ? "Gelb" : "Rot");
+    const text = d<=0 ? "liegt auf oder unter dem Genre-Ist – belastbar"
+      : (d<=10 ? "liegt "+d+" Punkte über dem Genre-Ist – vertretbar, wenn ein Grund dafür benannt ist (Marke, Star, Kooperation)"
+               : "liegt "+d+" Punkte über dem Genre-Ist – das trägt nur mit belegbarem Zugpferd: bundesweite Marke, Star, Ausverkaufshistorie. Ohne das ist es eine Wette");
+    return {d, html:`<tr><td><span class="ampel ampel${stufe}"></span><b>${v.titel}</b>
+        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span> ${datumDE(v.datum)}</div></td>
+      <td class="zahl">${a.auslastung} %</td><td class="zahl">${ist} %${GENRE_IST_NAEHERUNG.indexOf(v.sparte)>-1?'<div class="fussnote">Näherung, kein Hausist</div>':""}</td>
+      <td class="zahl ${d>10?"plus":(d<=0?"minus":"")}">${d>0?"+":""}${d}</td>
+      <td>${text}</td></tr>`};
+  }).filter(Boolean).sort((x,y)=>y.d-x.d);
+  const rot = zeilen.filter(z=>z.d>10).length, gelb = zeilen.filter(z=>z.d>0&&z.d<=10).length;
+  return `<h3>Plausibilitätsprüfung der Auslastungsannahmen</h3>
+    <div class="${rot>0?"warnbox":"hinweis"}">Jede angenommene Auslastung wird gegen den <b>tatsächlichen Genre-Durchschnitt des Hauses aus 25/26</b> gehalten.
+      ${rot>0?`<b>${rot} Produktion(en) liegen mehr als 10 Punkte über dem Ist</b> – dort steht die Saisonbilanz auf einer Annahme, die das Haus in diesem Genre noch nie erreicht hat.`:"Keine Annahme liegt mehr als 10 Punkte über dem Ist."}
+      ${gelb>0?` ${gelb} weitere liegen leicht darüber.`:""} Das ist keine Aufforderung, tiefer zu planen – aber jede grüne Zahl über dem Ist braucht ein Argument, das über Optimismus hinausgeht.</div>
+    <table><tr><th>Produktion</th><th class="zahl">Annahme</th><th class="zahl">Genre-Ist 25/26</th><th class="zahl">Δ</th><th>Bewertung</th></tr>
+      ${zeilen.map(z=>z.html).join("")}</table>`;
+}
+function saisonverlaufHTML(){
+  const mit = sortiert().filter(v=>zaehltBudget(v) && v.datum);
+  if(mit.length===0) return "";
+  const monate = [];
+  const erst = mit[0].datum.slice(0,7), letzt = mit[mit.length-1].datum.slice(0,7);
+  let [j,m] = erst.split("-").map(Number);
+  const [jE,mE] = letzt.split("-").map(Number);
+  while(j<jE || (j===jE && m<=mE)){
+    monate.push(String(j)+"-"+String(m).padStart(2,"0"));
+    m++; if(m>12){ m=1; j++; }
+  }
+  const proMonat = {};
+  mit.forEach(v=>{ const k=v.datum.slice(0,7); (proMonat[k]=proMonat[k]||[]).push(v); });
+  const leer = monate.filter(k=>!proMonat[k]);
+  const zeilen = monate.map(k=>{
+    const l = proMonat[k]||[];
+    const name = new Date(+k.slice(0,4), +k.slice(5,7)-1, 1).toLocaleDateString("de-DE",{month:"long",year:"2-digit"});
+    return `<div class="monatszeile"><div class="mname">${name}</div>
+      <div class="monatspunkte">${l.map(v=>`<span class="mpunkt" style="background:${genreFarbe(v.sparte)}" title="${v.titel} – ${v.sparte}"></span>`).join("")}</div>
+      <div class="bwert" style="width:60px">${l.length===0?'<span style="color:var(--rot);font-weight:700">leer</span>':l.length}</div></div>`;
+  }).join("");
+  const proSparte = {};
+  mit.forEach(v=>{ proSparte[v.sparte] = (proSparte[v.sparte]||0)+1; });
+  const gesamtN = mit.length;
+  const balance = SPARTEN.filter(s=>proSparte[s]).map(s=>{
+    const anteil = Math.round(proSparte[s]/gesamtN*100);
+    return `<div class="balkenzeile"><div class="bname">${s}</div>
+      <div class="balken"><div style="width:${anteil}%;background:${genreFarbe(s)}"></div></div>
+      <div class="bwert">${proSparte[s]} Termine · ${anteil} %</div></div>`;
+  }).join("");
+  const fehlend = SPARTEN.filter(s=>!proSparte[s]);
+  return `<h3>Saisonverlauf und Genrebalance</h3>
+    <div class="hinweis">Ein Spielplan ist mehr als eine Summe guter Abende: Er braucht einen gleichmäßigen Puls über die Saison und eine Mischung,
+      in der kein Genre die anderen erdrückt. Jeder Punkt ist ein Termin, die Farbe steht für die Sparte.
+      ${leer.length>0?`<b>${leer.length} Monat(e) ohne jeden Termin</b> – das sind Lücken, in denen das Haus aus der Wahrnehmung des Publikums fällt.`:"Kein Monat der Saison bleibt ohne Termin."}
+      ${fehlend.length>0?` Nicht besetzt: ${fehlend.join(", ")}.`:""}</div>
+    ${zeilen}
+    <h3 style="margin-top:18px;">Verteilung nach Sparte (Anzahl Termine)</h3>
+    ${balance}
+    <p class="fussnote">Die Balken zeigen Termin-Anteile, nicht Kostenanteile – die Kostensicht steht im Reiter Übersicht.
+      Beides auseinanderzuhalten lohnt sich: Kindertheater ist bei den Terminen stark und bei den Kosten schwach, große Gastspiele umgekehrt.</p>`;
+}
+
+/* ================= v4: PROGRAMMZETTEL ALS PDF ================= */
+function druckDialogOeffnen(){
+  const t = document.getElementById("drTitel");
+  if(!t.value) t.value = "Programm Saison " + daten.saisonAktuell;
+  const u = document.getElementById("drUnter");
+  if(!u.value) u.value = "Stand " + datumDE(new Date().toISOString().slice(0,10));
+  document.getElementById("druckDialog").showModal();
+}
+function druckStarten(){
+  const umfang = document.getElementById("drUmfang").value;
+  const zeigStatus = document.getElementById("drStatus").checked;
+  const zeigAgentur = document.getElementById("drAgentur").checked;
+  const zeigAnm = document.getElementById("drAnmerkung").checked;
+  const zeigPreis = document.getElementById("drPreise").checked;
+  let liste = sortiert().filter(v=>v.status!=="abgesagt");
+  if(umfang==="gebucht") liste = liste.filter(v=>v.status==="gebucht");
+  else if(umfang==="fix") liste = liste.filter(v=>v.status==="gebucht"||v.status==="optioniert");
+  if(liste.length===0){ alert("Für diese Auswahl gibt es keine Produktionen."); return; }
+  const benutzteSparten = SPARTEN.filter(s=>liste.some(v=>v.sparte===s));
+  let html = `<h1 class="dkTitel">${document.getElementById("drTitel").value||("Programm Saison "+daten.saisonAktuell)}</h1>
+    <p class="dkSub">${document.getElementById("drUnter").value||""}${document.getElementById("drUnter").value?" · ":""}${liste.length} Termine</p>
+    <div class="dkLegende">${benutzteSparten.map(s=>`<span class="gpille" style="background:${genreFarbe(s)}">${s}</span>`).join("")}</div>`;
+  let letzterMonat = null;
+  liste.forEach(v=>{
+    const monat = v.datum ? v.datum.slice(0,7) : "ohne";
+    if(monat !== letzterMonat){
+      html += `<div class="dkMonat">${v.datum ? new Date(+v.datum.slice(0,4), +v.datum.slice(5,7)-1, 1).toLocaleDateString("de-DE",{month:"long",year:"numeric"}) : "Ohne Datum"}</div>`;
+      letzterMonat = monat;
+    }
+    const a = zeigPreis ? analyseVon(v) : null;
+    html += `<div class="dkZeile">
+      <div class="dkBalken" style="background:${genreFarbe(v.sparte)}"></div>
+      <div class="dkDatum">${v.datum?`<b>${datumDE(v.datum)}</b>${wochentag(v.datum)}`:"Termin offen"}</div>
+      <div class="dkMitte">
+        <div class="dkTitelZ">${v.titel||"–"}</div>
+        ${(zeigAgentur&&v.agentur)||zeigStatus?`<div class="dkMeta">${[zeigAgentur&&v.agentur?v.agentur:"", zeigStatus?statusText(v.status):""].filter(Boolean).join(" · ")}</div>`:""}
+        ${zeigAnm&&v.anmerkung?`<div class="dkMeta">${v.anmerkung}</div>`:""}
+      </div>
+      <div class="dkRechts">
+        <span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
+        ${a?`<div class="dkMeta">ab ${euro(a.preise[a.preise.length-1]||a.preise[0])}</div>`:""}
+      </div>
+    </div>`;
+  });
+  html += `<div class="dkFuss">Kultur- und Tagungsstätten Singen · Stadthalle Singen · erstellt aus dem Spielplan-Tool am ${datumDE(new Date().toISOString().slice(0,10))}.
+    ${umfang==="alle"?"Interner Arbeitsstand – enthält auch Ideen und Anfragen, die noch nicht verbindlich sind.":umfang==="fix"?"Planungsstand – enthält gebuchte und optionierte Produktionen. Optionen sind noch nicht verbindlich.":"Verbindlicher Stand – nur gebuchte Produktionen."}</div>`;
+  document.getElementById("druck").innerHTML = html;
+  document.getElementById("druckDialog").close();
+  document.body.classList.add("druckt");
+  setTimeout(()=>{ window.print(); druckEnde(); }, 60);
+}
+function druckEnde(){ setTimeout(()=>document.body.classList.remove("druckt"), 400); }
+window.addEventListener("afterprint", druckEnde);
+
+/* ================= DIALOG ================= */
+function vaDialogOeffnen(vid){
+  const d = document.getElementById("vaDialog");
+  document.getElementById("vdSparte").innerHTML = SPARTEN.map(s=>`<option>${s}</option>`).join("");
+  document.getElementById("vdNkRaster").innerHTML = NK_ARTEN.map(([k,l])=>
+    `<div class="feld"><label>${l}</label><input type="number" id="vdNk_${k}" min="0" step="50" oninput="vdSummeAktualisieren()"></div>`).join("");
+  let v = null;
+  if(vid!==null && vid!==undefined){
+    v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+    document.getElementById("vdTitel").textContent = "Veranstaltung bearbeiten";
+    document.getElementById("vdId").value = vid;
+    document.getElementById("vdDatum").value = v.datum||"";
+    document.getElementById("vdStatus").value = v.status||"";
+    document.getElementById("vdTitelFeld").value = v.titel||"";
+    document.getElementById("vdSparte").value = v.sparte||"Sonstiges";
+    document.getElementById("vdAgentur").value = v.agentur||"";
+    document.getElementById("vdGage").value = v.gage||0;
+    NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = v.nk[k]||0; });
+    document.getElementById("vdNkAlt").value = v.nkAlt||0;
+    document.getElementById("vdAnmerkung").value = v.anmerkung||"";
+    document.getElementById("vdBudgetneutral").checked = !!v.budgetneutral;
+    document.getElementById("vdLoeschen").style.display = "";
+  }else{
+    document.getElementById("vdTitel").textContent = "Neue Veranstaltung";
+    document.getElementById("vdId").value = "";
+    document.getElementById("vdDatum").value = "";
+    document.getElementById("vdStatus").value = "Idee";
+    document.getElementById("vdTitelFeld").value = "";
+    document.getElementById("vdSparte").value = "Schauspiel";
+    document.getElementById("vdAgentur").value = "";
+    document.getElementById("vdGage").value = 0;
+    NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = 0; });
+    document.getElementById("vdNkAlt").value = 0;
+    document.getElementById("vdAnmerkung").value = "";
+    document.getElementById("vdBudgetneutral").checked = false;
+    document.getElementById("vdLoeschen").style.display = "none";
+  }
+  document.getElementById("vdNkAltFeld").style.display = (v && (+v.nkAlt||0)>0) ? "" : "none";
+  document.getElementById("vdGage").oninput = vdSummeAktualisieren;
+  document.getElementById("vdNkAlt").oninput = vdSummeAktualisieren;
+  vdSummeAktualisieren();
+  d.showModal();
+}
+function vdSummeAktualisieren(){
+  const gage = +document.getElementById("vdGage").value||0;
+  let nk = +document.getElementById("vdNkAlt").value||0;
+  NK_ARTEN.forEach(([k])=>{ nk += +document.getElementById("vdNk_"+k).value||0; });
+  document.getElementById("vdSumme").innerHTML = "Nebenkosten: <b>"+euro(nk)+"</b> · Gesamt (Gage + Nebenkosten): <b>"+euro(gage+nk)+"</b>";
+}
+function vaSpeichern(){
+  const idRoh = document.getElementById("vdId").value;
+  const nk = {};
+  NK_ARTEN.forEach(([k])=>{ nk[k] = +document.getElementById("vdNk_"+k).value||0; });
+  const werte = {
+    datum: document.getElementById("vdDatum").value,
+    status: document.getElementById("vdStatus").value,
+    titel: document.getElementById("vdTitelFeld").value,
+    sparte: document.getElementById("vdSparte").value,
+    agentur: document.getElementById("vdAgentur").value,
+    gage: +document.getElementById("vdGage").value||0,
+    nk: nk,
+    nkAlt: +document.getElementById("vdNkAlt").value||0,
+    anmerkung: document.getElementById("vdAnmerkung").value,
+    budgetneutral: document.getElementById("vdBudgetneutral").checked
+  };
+  if(!werte.titel){ alert("Bitte einen Titel eintragen."); return; }
+  /* v4: Doppelbelegung abfangen – der Saal kann pro Tag nur einmal belegt werden */
+  if(werte.status==="gebucht" && werte.datum){
+    const andere = gebuchtAmTag(werte.datum, idRoh ? +idRoh : -1);
+    if(andere.length>0){
+      const txt = "DOPPELBELEGUNG am " + datumDE(werte.datum) + " (" + wochentag(werte.datum) + ")\n\n"
+        + "An diesem Tag ist bereits gebucht:\n· " + andere.map(v=>v.titel).join("\n· ")
+        + "\n\nDer Saal kann nur einmal belegt werden. Sinnvoll ist meist: Termin verlegen oder diese Produktion auf „optioniert“ stellen.\n\n"
+        + "Trotzdem als gebucht speichern? (z. B. bei einer zweiten Vorstellung am selben Tag)";
+      if(!confirm(txt)) return;
+    }
+  }
+  if(idRoh){
+    const v = daten.veranstaltungen.find(x=>x.vid===+idRoh);
+    Object.assign(v, werte);
+  }else{
+    daten.veranstaltungen.push(Object.assign({vid:daten.naechsteVid++}, werte));
+  }
+  speichern();
+  document.getElementById("vaDialog").close();
+  zeigeTab(aktuellerTab);
+}
+function vaLoeschen(){
+  const idRoh = document.getElementById("vdId").value; if(!idRoh) return;
+  if(!confirm("Diese Veranstaltung wirklich löschen? (Tipp: 'abgesagt' behält sie sichtbar in der Liste, zählt aber nicht mehr gegen das Budget.)")) return;
+  daten.veranstaltungen = daten.veranstaltungen.filter(x=>x.vid!==+idRoh);
+  speichern();
+  document.getElementById("vaDialog").close();
+  zeigeTab(aktuellerTab);
+}
+
+kopfzeile();
+zeigeTab("uebersicht");
+initCloud();
+</script>
+</body>
+</html>
