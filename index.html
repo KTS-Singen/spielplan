@@ -1114,12 +1114,17 @@ const KANDIDATEN = [];
    Erlöse (die eingetragenen Preiskategorien). Nichts wird pauschal geschätzt.
    Ohne vollständig hinterlegte Ticketpreise werden weder Erlöse noch Durchschnittspreise,
    Break-even-Werte oder Ergebnisse ausgewiesen. */
-const KAT_NAMEN = ["Kategorie 1","Kategorie 2","Kategorie 3","Kategorie 4"];
+/* v10: Premium als oberste Preiskategorie über Kategorie 1. */
+const KAT_NAMEN = ["Premium","Kategorie 1","Kategorie 2","Kategorie 3","Kategorie 4"];
+const leereKat = n => ({name:n, plaetze:0, preis:0, minderung:0});
 function katNormieren(a){
   if(!Array.isArray(a.kat) || a.kat.length===0){
-    a.kat = KAT_NAMEN.map(n=>({name:n, plaetze:0, preis:0, minderung:0}));
+    a.kat = KAT_NAMEN.map(leereKat);
   }
-  while(a.kat.length < 4) a.kat.push({name:KAT_NAMEN[a.kat.length]||("Kategorie "+(a.kat.length+1)), plaetze:0, preis:0, minderung:0});
+  /* Bestandsdaten hatten vier Kategorien ohne Premium – Premium wird vorne ergänzt,
+     die bereits eingetragenen Kategorien behalten ihre Werte und ihre Reihenfolge. */
+  if(!a.kat.some(k=>k && k.name==="Premium")) a.kat.unshift(leereKat("Premium"));
+  while(a.kat.length < KAT_NAMEN.length) a.kat.push(leereKat(KAT_NAMEN[a.kat.length]||("Kategorie "+a.kat.length)));
   a.kat.forEach((k,i)=>{
     if(!k.name) k.name = KAT_NAMEN[i]||("Kategorie "+(i+1));
     k.plaetze = Math.max(0, +k.plaetze||0);
