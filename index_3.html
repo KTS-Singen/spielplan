@@ -238,7 +238,7 @@
 
 <script>
 /* ================= STAMMDATEN ================= */
-const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Lesekonzert","Kindertheater","Sonstiges"];
+const SPARTEN = ["Schauspiel","Komödie","Musik/Show","Symphoniekonzert","Kammerkonzert","Große Abende","Kindertheater"];
 const STATI = ["gebucht","optioniert","angefragt","Idee","abgesagt"];
 const NK_ARTEN = [["tantiemen","Tantiemen"],["transfer","Transfer"],["uebernachtung","Übernachtung"],["catering","Catering"],["gema","Gema"],["sozialkasse","Sozialkasse"],["sonderabgabe","Sonderabgabe"]];
 const nkLeer = () => ({tantiemen:0,transfer:0,uebernachtung:0,catering:0,gema:0,sozialkasse:0,sonderabgabe:0});
@@ -323,6 +323,28 @@ function migriere(){
   if(daten.kalk.ust===undefined) daten.kalk.ust = 7;
   if(daten.kalk.vvk===undefined) daten.kalk.vvk = 10;
   if(daten.kalk.deckungsbedarf===undefined) daten.kalk.deckungsbedarf = 0;
+  /* v6: Sparte „Lesekonzert" heißt jetzt „Große Abende"; die Sparte „Sonstiges" entfällt
+     samt der ihr zugeordneten Veranstaltungen und deren Analysewerten. */
+  let v6geaendert = false;
+  daten.veranstaltungen.forEach(v=>{ if(v.sparte==="Lesekonzert"){ v.sparte = "Große Abende"; v6geaendert = true; } });
+  const v6raus = daten.veranstaltungen.filter(v=>v.sparte==="Sonstiges");
+  if(v6raus.length>0){
+    if(!daten.entfernt) daten.entfernt = {};
+    daten.entfernt.sonstiges = (daten.entfernt.sonstiges||[]).concat(
+      v6raus.map(v=>JSON.parse(JSON.stringify(Object.assign({}, v, {analyse: daten.analyse[v.vid]||null})))));
+    v6raus.forEach(v=>{ delete daten.analyse[v.vid]; });
+    daten.veranstaltungen = daten.veranstaltungen.filter(v=>v.sparte!=="Sonstiges");
+    v6geaendert = true;
+  }
+  /* Archivierte Saisons: nur umbenennen, nichts löschen – sonst verändern sich abgeschlossene Vorjahreswerte. */
+  Object.keys(daten.saisons||{}).forEach(k=>{
+    (daten.saisons[k].veranstaltungen||[]).forEach(v=>{ if(v.sparte==="Lesekonzert"){ v.sparte = "Große Abende"; v6geaendert = true; } });
+  });
+  if(v6geaendert && typeof window!=="undefined") window.__migrationOffen = true;
+}
+/* v6: Ergebnis der Umstellung einmalig zentral sichern, sobald der Serverstand geladen ist. */
+function migrationSichern(){
+  if(typeof window!=="undefined" && window.__migrationOffen){ window.__migrationOffen = false; speichern(); }
 }
 migriere();
 
@@ -464,7 +486,7 @@ async function initCloud(){
         konfliktBanner(srv);
       } else {
         daten = srv.daten; syncVersion = srv.version; syncDirty = false; migriere(); lokalSichern();
-        neuZeichnen(); syncStatus("synchron ✓","gruen");
+        neuZeichnen(); syncStatus("synchron ✓","gruen"); migrationSichern();
       }
     }
   }catch(e){
@@ -504,7 +526,7 @@ async function pollServer(){
     const rows = await r.json();
     if(rows.length && rows[0].version > syncVersion){
       daten = rows[0].daten; syncVersion = rows[0].version; migriere(); lokalSichern();
-      neuZeichnen(); syncStatus("aktualisiert – neuer Stand übernommen ✓","gruen");
+      neuZeichnen(); syncStatus("aktualisiert – neuer Stand übernommen ✓","gruen"); migrationSichern();
     }
   }catch(e){}
 }
@@ -543,6 +565,7 @@ function konfliktServerNehmen(){
   const dlg = document.getElementById("vaDialog"); if(dlg && dlg.open) dlg.close();
   kopfzeile(); zeigeTab(aktuellerTab);
   syncStatus("synchron ✓","gruen");
+  migrationSichern();
 }
 async function konfliktMeinsErzwingen(){
   const srv = window.__konfliktServer; if(!srv) return;
@@ -580,18 +603,18 @@ const wochentag = iso => { if(!iso) return ""; const d = new Date(iso+"T12:00:00
 /* v4: Farbkennung je Sparte – für Programmzettel, Kalender-Legende und Saisonverlauf */
 const GENRE_FARBEN = {
   "Schauspiel":"#7e3167", "Komödie":"#c2410c", "Musik/Show":"#1d4ed8", "Symphoniekonzert":"#0f766e",
-  "Kammerkonzert":"#6d28d9", "Lesekonzert":"#a16207", "Kindertheater":"#15803d", "Sonstiges":"#57534e"
+  "Kammerkonzert":"#6d28d9", "Große Abende":"#a16207", "Kindertheater":"#15803d"
 };
 const genreFarbe = s => GENRE_FARBEN[s] || "#57534e";
 /* v4: Ist-Auslastung je Genre 25/26 (identisch mit den Werten im Reiter Marktforschung) */
-const GENRE_IST = {"Kindertheater":90, "Komödie":67, "Musik/Show":65, "Symphoniekonzert":63, "Kammerkonzert":57, "Schauspiel":56, "Lesekonzert":56, "Sonstiges":60};
+const GENRE_IST = {"Kindertheater":90, "Komödie":67, "Musik/Show":65, "Symphoniekonzert":63, "Kammerkonzert":57, "Schauspiel":56, "Große Abende":56};
 /* v5: Sparten ohne eigene Ist-Historie im Haus – der Vergleichswert ist eine Näherung, keine Messung */
-const GENRE_IST_NAEHERUNG = ["Lesekonzert","Sonstiges"];
+const GENRE_IST_NAEHERUNG = ["Große Abende"];
 /* v5: Startannahmen für neue Sparten, die es 25/26 noch nicht gab.
    Greift nur, wenn für eine Produktion keine Einzelvorgabe existiert. */
 const SPARTEN_VORGABE = {
-  "Lesekonzert": {preise:[34,29,24,19], plaetze:550, auslastung:55, faktor:0.80, rolle:"IMAGETREIBER",
-    text:"Neues Lesekonzert – Text und Live-Musik an einem Abend. Startannahmen: 550 Plätze eingerichtet, 55 % Auslastung, Erlösfaktor 0,80 (weniger Abo-Verwässerung als in den Ringen, weil das Format überwiegend im Freiverkauf läuft). Zielgruppe 40+, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Werte bitte an der konkreten Produktion nachziehen."}
+  "Große Abende": {preise:[34,29,24,19], plaetze:550, auslastung:55, faktor:0.80, rolle:"IMAGETREIBER",
+    text:"Neuer Großer Abend – Text und Live-Musik an einem Abend. Startannahmen: 550 Plätze eingerichtet, 55 % Auslastung, Erlösfaktor 0,80 (weniger Abo-Verwässerung als in den Ringen, weil das Format überwiegend im Freiverkauf läuft). Zielgruppe 40+, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Werte bitte an der konkreten Produktion nachziehen."}
 };
 /* v4: echte Doppelbelegung = mehr als eine GEBUCHTE Produktion am selben Tag.
    Mehrere Ideen/Anfragen/Optionen am selben Tag sind Planung und deshalb erlaubt. */
@@ -1193,7 +1216,7 @@ function zeigeMarkt(){
       <div class="bwert">${a} % · ${String(e).replace(".",",")} €/Ticket</div></div>
       <p class="fussnote" style="margin:0 0 8px 160px">${txt}</p>`).join("")}
     <div class="hinweis"><b>Lesart:</b> Grün = trägt sich selbst, gelb = braucht Begründung. Effektiverlös = tatsächlicher Erlös je Besucher nach Abo-/Ermäßigungs-Verwässerung. Diese Zahlen sind die verlässlichste Marktforschung, die es für Singen gibt – es sind eure eigenen Kassen-Istwerte.
-      Für das <b>Lesekonzert</b> fehlt diese Grundlage noch: Das Format gab es 25/26 nicht, die Plausibilitätsprüfung in der Analyse rechnet deshalb mit 56 % als Näherung
+      Für die <b>Großen Abende</b> fehlt diese Grundlage noch: Das Format gab es 25/26 nicht, die Plausibilitätsprüfung in der Analyse rechnet deshalb mit 56 % als Näherung
       aus dem literarisch-sprechtheatralen Segment. Nach dem ersten Abend gehört dort der echte Wert hinein.</div>
     <h3>Kaufkraft und Erreichbarkeit nach Zielgruppen (strategische Einschätzung)</h3>
     ${zielgruppen.map(([z,rolle,txt])=>`<div class="akarte"><div class="akopf"><b style="font-size:15px">${z}</b><span style="flex:1"></span><span class="rolle">${rolle.toUpperCase()}</span></div><div class="atext">${txt}</div></div>`).join("")}
@@ -1447,7 +1470,7 @@ function vaDialogOeffnen(vid){
     document.getElementById("vdDatum").value = v.datum||"";
     document.getElementById("vdStatus").value = v.status||"";
     document.getElementById("vdTitelFeld").value = v.titel||"";
-    document.getElementById("vdSparte").value = v.sparte||"Sonstiges";
+    document.getElementById("vdSparte").value = v.sparte||"Schauspiel";
     document.getElementById("vdAgentur").value = v.agentur||"";
     document.getElementById("vdGage").value = v.gage||0;
     NK_ARTEN.forEach(([k])=>{ document.getElementById("vdNk_"+k).value = v.nk[k]||0; });
