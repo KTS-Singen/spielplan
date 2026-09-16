@@ -323,6 +323,7 @@ function migriere(){
   if(daten.kalk.ust===undefined) daten.kalk.ust = 7;
   if(daten.kalk.vvk===undefined) daten.kalk.vvk = 10;
   if(daten.kalk.deckungsbedarf===undefined) daten.kalk.deckungsbedarf = 0;
+  if(daten.kalk.kostenbasis===undefined) daten.kalk.kostenbasis = "netto";   /* v8: nur Deklaration, rechnet nichts um */
   /* v6: Sparte „Lesekonzert" heißt jetzt „Große Abende"; die Sparte „Sonstiges" entfällt
      samt der ihr zugeordneten Veranstaltungen und deren Analysewerten. */
   let v6geaendert = false;
@@ -605,8 +606,30 @@ const gesamt = v => (+v.gage||0) + nkSumme(v);
 const zaehltBudget = v => v.status !== "abgesagt";
 /* v4: budgetwirksam = nicht abgesagt UND nicht budgetneutral gestellt */
 const budgetwirksam = v => v.status !== "abgesagt" && !v.budgetneutral;
-const neutralSumme = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).reduce((a,v)=>a+gesamt(v),0);
-const neutralAnzahl = () => daten.veranstaltungen.filter(v=>v.status!=="abgesagt" && v.budgetneutral).length;
+/* ================= v8: EINE EINZIGE KOSTENQUELLE =================
+   Jede Kostenzahl im ganzen Werkzeug stammt aus dieser Funktion. Es gibt keine zweite
+   Summenbildung und keinen manuell gepflegten Gesamtwert. Grundlage sind ausschließlich
+   die Einzelpositionen der Veranstaltungen: Gage plus sämtliche erfassten Nebenkosten. */
+function kostenBasis(){
+  const alle = daten.veranstaltungen;
+  const aktiv = alle.filter(v=>v.status!=="abgesagt");
+  const budget = aktiv.filter(v=>!v.budgetneutral);
+  const neutral = aktiv.filter(v=>v.budgetneutral);
+  const abgesagt = alle.filter(v=>v.status==="abgesagt");
+  const summe = l => l.reduce((a,v)=>a+gesamt(v),0);
+  const nachArt = {gage:0, nkAlt:0};
+  NK_ARTEN.forEach(([k])=>nachArt[k]=0);
+  aktiv.forEach(v=>{
+    nachArt.gage += (+v.gage||0);
+    NK_ARTEN.forEach(([k])=>{ nachArt[k] += (+v.nk[k]||0); });
+    nachArt.nkAlt += (+v.nkAlt||0);
+  });
+  return {aktiv, budget, neutral, abgesagt, nachArt,
+    gesamt: summe(aktiv), budgetwirksam: summe(budget), summeNeutral: summe(neutral), summeAbgesagt: summe(abgesagt),
+    anzahlAktiv: aktiv.length, anzahlNeutral: neutral.length, anzahlAbgesagt: abgesagt.length};
+}
+const neutralSumme = () => kostenBasis().summeNeutral;
+const neutralAnzahl = () => kostenBasis().anzahlNeutral;
 const WOCHENTAGE = ["So","Mo","Di","Mi","Do","Fr","Sa"];
 const wochentag = iso => { if(!iso) return ""; const d = new Date(iso+"T12:00:00"); return isNaN(d)?"":WOCHENTAGE[d.getDay()]; };
 /* v4: Farbkennung je Sparte – für Programmzettel, Kalender-Legende und Saisonverlauf */
@@ -622,8 +645,8 @@ const GENRE_IST_NAEHERUNG = ["Große Abende"];
 /* v5: Startannahmen für neue Sparten, die es 25/26 noch nicht gab.
    Greift nur, wenn für eine Produktion keine Einzelvorgabe existiert. */
 const SPARTEN_VORGABE = {
-  "Große Abende": {preise:[34,29,24,19], plaetze:550, auslastung:55, faktor:0.80, rolle:"IMAGETREIBER",
-    text:"Neuer Großer Abend – Text und Live-Musik an einem Abend. Startannahmen: 550 Plätze eingerichtet, 55 % Auslastung, Erlösfaktor 0,80 (weniger Abo-Verwässerung als in den Ringen, weil das Format überwiegend im Freiverkauf läuft). Zielgruppe 40+, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Werte bitte an der konkreten Produktion nachziehen."}
+  "Große Abende": {rolle:"IMAGETREIBER",
+    text:"Neuer Großer Abend – Text und Musik an einem Abend. Zielgruppe ab 40, literarisch interessiert, dazu das Konzertpublikum, das keinen ganzen Theaterabend will; überwiegend Freiverkauf statt Abo. Das Format lebt vom Namen auf dem Zettel: mit einem bekannten Sprecher oder Musiker trägt es sich, ohne beides ist es Nischenpflege. Kapazität und Preise je Kategorie bitte im Reiter Kalkulation eintragen, dann rechnet das Tool Break-even und Ergebnis."}
 };
 /* v4: echte Doppelbelegung = mehr als eine GEBUCHTE Produktion am selben Tag.
    Mehrere Ideen/Anfragen/Optionen am selben Tag sind Planung und deshalb erlaubt. */
@@ -636,7 +659,7 @@ function gebuchtAmTag(datum, ausserVid){
   return daten.veranstaltungen.filter(v=>v.status==="gebucht" && v.datum===datum && v.vid!==ausserVid);
 }
 function gesamtBudget(){ return (+daten.budgetJahr1||0)+(+daten.budgetJahr2||0)+(+daten.sponsoren||0)+(+daten.uebertrag||0); }
-function verplant(){ return daten.veranstaltungen.filter(budgetwirksam).reduce((a,v)=>a+gesamt(v),0); }
+function verplant(){ return kostenBasis().budgetwirksam; }
 function statusKlasse(s){ return s ? "s"+s : "sohne"; }
 function statusText(s){ return s || "ohne Status"; }
 function sortiert(){ return daten.veranstaltungen.slice().sort((a,b)=>(a.datum||"9999").localeCompare(b.datum||"9999")); }
@@ -688,7 +711,8 @@ function budgetAendern(feld, wert){
   speichern(); zeigeUebersicht();
 }
 function zeigeUebersicht(){
-  const gb = gesamtBudget(), vp = verplant(), frei = gb - vp;
+  const kbU = kostenBasis();
+  const gb = gesamtBudget(), vp = kbU.budgetwirksam, frei = gb - vp;
   const proStatus = {};
   STATI.forEach(s=>proStatus[s]={summe:0, anzahl:0});
   proStatus["ohne"] = {summe:0, anzahl:0};
@@ -723,10 +747,12 @@ function zeigeUebersicht(){
     </div>
     <div class="karten">
       <div class="karte"><div class="wert">${euro(gb)}</div><div class="label">Gesamtbudget Saison ${daten.saisonAktuell}</div></div>
-      <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant (ohne „abgesagt") · ${anzahlAktiv} Veranstaltungen</div></div>
+      <div class="karte"><div class="wert">${euro(vp)}</div><div class="label">Bereits verplant · ${kbU.budget.length} budgetwirksame Veranstaltungen</div></div>
       <div class="karte" style="${frei<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert" style="${frei<0?"color:var(--rot)":""}">${euro(frei)}</div><div class="label">${frei<0?"BUDGET ÜBERZOGEN":"Noch freies Budget"}</div></div>
-      ${neutralAnzahl()>0?`<div class="karte" style="border-color:#9dbcf0;background:#f4f7fd;"><div class="wert" style="color:#14448f">${euro(neutralSumme())}</div><div class="label">davon budgetneutral gestellt · ${neutralAnzahl()} Veranstaltung(en) – nicht in „verplant" enthalten</div></div>`:""}
+      ${kbU.anzahlNeutral>0?`<div class="karte" style="border-color:#9dbcf0;background:#f4f7fd;"><div class="wert" style="color:#14448f">${euro(kbU.summeNeutral)}</div><div class="label">davon budgetneutral gestellt · ${kbU.anzahlNeutral} Veranstaltung(en) – nicht in „verplant" enthalten</div></div>`:""}
+      <div class="karte"><div class="wert">${euro(kbU.gesamt)}</div><div class="label">Gagen und Nebenkosten aller ${kbU.anzahlAktiv} nicht abgesagten Produktionen – die Zahl, die auch Analyse und Kalkulation ausweisen</div></div>
     </div>
+    ${kostenAusweisHTML(kbU)}
     <h3>Warnungen</h3>
     ${warnungenHTML()}
     <h3>Nach Status</h3>
@@ -1002,52 +1028,56 @@ const ROLLEN_INFO = {CASHCOW:"trägt die Saison wirtschaftlich", IMAGETREIBER:"z
    Stand: Spielplan 16.09.2026, 24 Termine. Auslastungs- und Erlösannahmen sind an den
    Ist-Werten des Hauses aus 25/26 kalibriert (siehe Reiter Marktforschung). */
 const TITEL_VORGABEN = [
- ["1. symphoniker", {av:4,score:63,prio:"B",rolle:"BASIS",sv:false,preise:[42,36,29,19],plaetze:847,auslastung:58,faktor:0.70,
-   text:"Saisonauftakt für die Abo-Basis, getragen von den Symphonikern Konstanz. 25/26 kamen 525 Besucher, das Genre liegt real bei 63 Prozent Auslastung. Kein Presse-, kein Neukundenpotenzial, dafür verlässliche Ringversorgung und ein ruhiger Start. Preise leicht über dem Ist sind durchsetzbar, der Rahmen der Entgeltordnung gäbe mehr her. Als Basis führen, keine Sonderanstrengung."}],
- ["marmen", {av:4,score:62,prio:"B",rolle:"PFLEGE",sv:false,preise:[36,31,26,0],plaetze:417,auslastung:55,faktor:0.65,
-   text:"Junges internationales Streichquartett mit Wettbewerbsvita – künstlerisch die stärkste der drei Kammerpositionen, im Verkauf aber ohne Zugkraft, weil der Name hier niemandem etwas sagt. Genau deshalb gehört in jede Ankündigung das Programm und die Herkunft, nicht der Ensemblename allein. Wirtschaftlich Kulturauftrag: 200 bis 250 Besucher, effektiv rund 18 Euro je Ticket, planmäßiger Zuschuss. Ich kenne die konkrete Besetzung und Gagenhöhe nicht – die Zahlen sind Genre-Startwerte, bitte am Vertrag nachziehen."}],
- ["kleine eheverbrechen", {av:4,score:64,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
-   text:"Solider Boulevard-Zweipersonenabend, Komödienring-Kernware für 50+. Läuft überall, ersetzt nichts, schadet nichts – im Wettbewerbsvergleich austauschbar, Radolfzell und Tuttlingen spielen Vergleichbares. Komödien erreichten 25/26 verlässlich 450 bis 680 Besucher bei effektiv 22 bis 23 Euro. Rechnet sich knapp. Buchen."}],
- ["rico", {av:4,score:75,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:80,faktor:0.70,
-   text:"Der stärkste Kinderstoff der Saison: Steinhöfels Rico und Oskar ist Schullektüre in der Region, verfilmt, preisgekrönt und bei Lehrkräften gesetzt. Das ist kein Werbe-, sondern ein Vertriebsthema – ein Mailing an die Grundschulen und weiterführenden Schulen im Landkreis im September füllt den Montagvormittag. Kindertheater lief 25/26 mit 90 Prozent das stärkste Genre des Hauses. Buchen und die zweite Vorstellung am selben Tag prüfen, die Anreise ist ohnehin bezahlt."}],
- ["der sohn", {av:4,score:70,prio:"B",rolle:"PFLEGE",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
-   text:"Florian Zeller ist dramatisch erstklassig, künstlerisch das stärkste Schauspiel der Saison. Das Thema, die Depression eines Jugendlichen, ist schwer, aber anschlussfähig: Schulkooperationen, Beratungsstellen, eine Einführung vor der Vorstellung. So wird aus einem erwartbaren Ring-Zuschuss von rund 3.000 Euro ein Reputationsgewinn. Buchen und aktiv rahmen statt nur zeigen."}],
- ["fitzek", {av:4,score:88,prio:"A",rolle:"CASHCOW",sv:true,preise:[55,48,42,35],plaetze:1123,auslastung:88,faktor:0.90,
-   text:"Der wirtschaftliche Anker der Saison und der Presse-Aufhänger, an dem der Südkurier hängen bleibt. Bestseller-Bekanntheit erledigt die halbe Werbung, das Einzugsgebiet reicht bis in die Schweiz, als SV sind 55 Euro in Kategorie 1 selbstbewusst und durchsetzbar. Volles Haus einrichten, 85 bis 95 Prozent sind realistisch. Zwei Dinge sind dringend: Der Abend steht nur auf optioniert, obwohl die halbe Saisonbilanz an ihm hängt – hier gehört als erstes ein Vertrag hin. Und er ist der einzige Novembertermin, fällt die Option, ist der stärkste Theatermonat des Jahres leer."}],
- ["streichquintett", {av:4,score:66,prio:"B",rolle:"PFLEGE",sv:false,preise:[40,34,28,0],plaetze:417,auslastung:60,faktor:0.70,
-   text:"Das stärkste Kammerprogramm der Saison: Berliner-Philharmoniker-Besetzung, kluge Dramaturgie, Feuilleton-tauglich. Wirtschaftlich bleibt es Kulturauftrag mit einem Zuschuss um 5.000 Euro, etwas über dem üblichen Kammer-Niveau. Der Termin am Freitag vor dem zweiten Advent ist gut gewählt, die Konkurrenz im Haus ist der Komödienabend am Folgetag – beide Zielgruppen überschneiden sich kaum. Die Geschichte hinter dem Programm gehört ins Marketing, Richtung VHS, Literaturkreise, Musikschule."}],
- ["tannenbaum", {av:4,score:63,prio:"B",rolle:"BASIS",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:58,faktor:0.78,
-   text:"Adventskomödie am zweiten Adventswochenende – der Termin verkauft mit. Klassische Ringware für 50+, keine überregionale Sichtbarkeit, aber verlässliche Mechanik aus Weihnachtsstimmung und Komödienbasis. Bei üblicher Komödien-Auslastung knapp unter Break-even. Buchen, die Gage liegt erfahrungsgemäß leicht über eurem Komödien-Schnitt, bei Vertragsschluss nachverhandeln."}],
- ["gestiefelte kater", {av:4,score:72,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:75,faktor:0.70,
-   text:"Märchenstoff im Advent, die sicherste Bank im Kinderprogramm. Die beiden Vorstellungen am 6. und 7. Dezember stehen jetzt als eigene Termine im Plan, deshalb rechnet jede Vorstellung hier mit 842 Plätzen statt mit der alten Doppelzahl. Getragen von Schulen und Kitas, nicht von Werbung – über ein Mailing im September sichern. Bucht sich fast von selbst ein."}],
- ["robin hood", {av:4,score:60,prio:"C",rolle:"BASIS",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:70,faktor:0.70,
-   text:"Robin Hood ist als Stoff unproblematisch und für Grundschulen gut buchbar. Das Problem ist der Kalender: Mit dem Gestiefelten Kater am 6. und 7. Dezember liegen drei Kindervorstellungen in acht Tagen, alle aus demselben Schul- und Kita-Verteiler. Die dritte nimmt der zweiten das Publikum, nicht umgekehrt. Empfehlung: verschieben, am besten in den leeren November oder in die dünne Strecke nach den Fastnachtsferien. Bleibt der Termin, mit 70 Prozent statt 75 rechnen und die Schulen getrennt ansprechen."}],
- ["mein herz", {av:4,score:60,prio:"C",rolle:"IMAGETREIBER",sv:false,preise:[34,29,24,19],plaetze:550,auslastung:55,faktor:0.80,
-   text:"Der erste Große Abend im Plan, Text und Live-Musik an einem Abend – das Format erreicht ein Publikum ab 40, das keinen ganzen Theaterabend will, und läuft überwiegend im Freiverkauf, daher der höhere Erlösfaktor. Den Titel kenne ich nicht belastbar, Besetzung und Gage müsst ihr selbst gegenrechnen; bei 550 Plätzen und 34 Euro Spitzenpreis liegt die Erlösdecke niedrig, das trägt nur mit einer Gage klar unter 5.000 Euro oder einem Namen, der Premiumpreise rechtfertigt. Der Termin ist der eigentliche Fehler: Freitag vor dem Neujahrskonzert heißt, das kleine neue Format steht im Schatten des größten Verkaufsschlagers des Hauses und teilt sich mit ihm die Presse dieses Wochenendes. In den November oder in den März schieben, dort ist es das einzige Angebot."}],
- ["neujahr", {av:4,score:90,prio:"A",rolle:"CASHCOW",sv:false,preise:[48,43,37,27],plaetze:1123,auslastung:95,faktor:0.60,
-   text:"Die verlässlichste Kasse des Hauses: 25/26 praktisch ausverkauft, effektiv rund 26 Euro je Ticket. Voll auf 1.123 Plätze ausbauen und die Neujahrspreise ausschöpfen. Ein Punkt ist zu klären, bevor die Zahl hier stimmt: Der Abend ist mit dem Neujahrsempfang gekoppelt. Wenn ein Teil der Plätze als Einladung der Stadt herausgeht, verwässert das den Erlös je Besucher deutlich – ich habe den Erlösfaktor deshalb vorsichtshalber auf 0,60 gesetzt. Klärt das Kontingent, dann steht hier eine belastbare Zahl. Auch so bleibt dieser Abend die Produktion, die die Kammerkonzerte und ein Wagnis mitfinanziert."}],
- ["monster auf der couch", {av:4,score:55,prio:"C",rolle:"BASIS",sv:false,preise:[37,32,26,21],plaetze:635,auslastung:55,faktor:0.75,
-   text:"Den Titel kenne ich nicht belastbar – die Werte hier sind reine Genre-Startwerte für einen Schauspielabend im Ring-Setup, keine Bewertung der Produktion. Was unabhängig davon gilt: Schauspiel ist mit 56 Prozent das schwächste Genre des Hauses im Freiverkauf und trägt sich nur mit Marke oder Star. Wenn der Abend weder das eine noch das andere mitbringt, ist er ein kalkulierter Zuschuss um 3.000 Euro – das kann man wollen, man sollte es nur vorher wissen. Besetzung, Agentur und Gage nachtragen, dann bewerte ich neu."}],
- ["brodas", {av:4,score:73,prio:"B",rolle:"IMAGETREIBER",sv:false,preise:[40,35,29,22],plaetze:815,auslastung:52,faktor:0.80,
-   text:"Der einzige Musik- und Show-Termin der Saison und damit der einzige Zugang zu Familien und Publikum unter 30. Urban Dance funktioniert über Bild und Bewegung, nicht über Text – Social-first bewerben, mit Tanzschulen und Vereinen arbeiten, Gruppenkontingente anbieten. Kalkulatorisch bleibt ein Zuschuss um 2.800 Euro, das ist der Preis für das Signal. Strategisch das eigentliche Problem: Ein Abend ist keine Zielgruppenarbeit. Wenn das junge Publikum wirklich kommen soll, braucht es einen zweiten Termin dieser Art in der leeren Strecke zwischen Mitte Februar und Ende März."}],
- ["zirkus der rätsel", {av:4,score:76,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:80,faktor:0.70,
-   text:"Die drei Fragezeichen Kids sind eine eingeführte Marke mit eigener Leserschaft in der Zielgruppe 6 bis 11 – das verkauft sich über den Namen, nicht über die Inszenierung. Montagstermin, also Schulvorstellung: früh über die Grundschulen sichern, parallel den Buchhandel und die Stadtbibliothek als Multiplikatoren einbinden. Gehört zu den drei Produktionen, die diese Saison wirtschaftlich tragen."}],
- ["lustigen weiber", {av:4,score:66,prio:"B",rolle:"BASIS",sv:false,preise:[39,34,28,19],plaetze:838,auslastung:55,faktor:0.78,
-   text:"Shakespeare-Boulevard, verlässliche 50+-Ware, Februar-Termin unkritisch. Bei den zuletzt eingetragenen Kosten die wirtschaftlich attraktivste Komödienposition des Plans: Bei üblicher Auslastung bleibt ein erwartetes Plus im niedrigen vierstelligen Bereich. Buchen – eine der wenigen Positionen, die die Saisonbilanz entlasten."}],
- ["klaviertrio", {av:4,score:56,prio:"C",rolle:"PFLEGE",sv:false,preise:[36,31,25,0],plaetze:417,auslastung:50,faktor:0.65,
-   text:"Dritte Kammerposition, planmäßiger Zuschuss um 3.500 Euro. Das ist als Kulturauftrag in Ordnung, aber der Eintrag ist es noch nicht: Klaviertrio ist kein Titel, sondern eine Besetzungsangabe. So steht der Abend im Programmheft ohne jedes Verkaufsargument. Vor Drucklegung gehören Ensemble und Programm hinein – ein benanntes Werk zieht in dieser Reihe mehr als jede Anzeige. Künstlerische Profilierung über die Programmatik kostet nichts extra."}],
- ["pumuckl", {av:4,score:76,prio:"A",rolle:"CASHCOW",sv:false,preise:[15,13,9,9],plaetze:842,auslastung:80,faktor:0.70,
-   text:"Selbstläufer-Marke mit frischem Rückenwind aus der Serien-Neuauflage, dazu ein Montagstermin, den die Schulen zuverlässig füllen. Im Plan steht aktuell eine Vorstellung: Die zweite am Folgetag gehört fixiert, sie bringt bei bereits bezahlter Anreise rund 3.000 bis 4.000 Euro Zusatzerlös bei minimalen Mehrkosten. Mit zwei Vorstellungen deutlich im Plus."}],
- ["conni", {av:4,score:73,prio:"A",rolle:"CASHCOW",sv:false,preise:[17,15,11,11],plaetze:842,auslastung:78,faktor:0.70,
-   text:"Conni ist die Marke für Vorschule und die ersten Grundschuljahre, das Musicalformat rechtfertigt einen leicht höheren Preis als das Sprechtheater für Kinder. Montagstermin, also wieder Schulschiene, diesmal ohne Konkurrenz im eigenen Haus – der März ist sonst leer. Der Abend ist damit die einzige Position, die im März überhaupt Frequenz erzeugt, und gleichzeitig der Beleg dafür, dass für Erwachsene zwischen dem 12. Februar und dem 24. März nichts stattfindet."}],
- ["gin romm", {av:4,score:70,prio:"B",rolle:"CASHCOW",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:60,faktor:0.78,
-   text:"Ein Zweipersonenstück über zwei alte Menschen, ein Kartenspiel und die Abrechnung mit dem eigenen Leben – bitterkomisch, preisgekrönt, für das Kernpublikum ab 55 ein gesetzter Abend. Die wirtschaftliche Frage hängt am Namen in der Klammer: Wenn dort ein bundesweit bekanntes Gesicht steht, trägt der Abend deutlich über der Komödien-Norm und rechtfertigt Preise am oberen Rand. Ich kann die Besetzung von hier aus nicht verifizieren – prüft das und zieht die Preise entsprechend nach. Und im Programmheft gehört der Name in die Zeile, nicht in eine Klammer."}],
- ["3. symphoniker", {av:4,score:62,prio:"B",rolle:"BASIS",sv:false,preise:[42,36,29,19],plaetze:847,auslastung:58,faktor:0.70,
-   text:"Symphonischer Saisonabschluss, etwa kostendeckend. Die Nummerierung ist inzwischen sauber, eins bis drei, das alte Durcheinander ist erledigt. Offen bleibt die Schreibweise: Zwei der drei Konzerte heißen Symphoniker Konstanz, das mittlere heißt Symphoniekonzert mit angehängtem Neujahrsempfang. Entweder ist es eine Reihe, dann heißt sie durchgehend gleich, oder es sind drei Einzelabende – vor der Drucklegung entscheiden."}],
- ["alle 7 wellen", {av:4,score:71,prio:"B",rolle:"CASHCOW",sv:false,preise:[40,35,29,20],plaetze:838,auslastung:62,faktor:0.78,
-   text:"Glattauer-Fortsetzung, und der Vorgänger Gut gegen Nordwind lief 25/26 in Singen nachweislich gut, mit 519 Besuchern und 11.500 Euro Umsatz. Bekannter Stoff, treues Publikum ab 45, moderate Gage – die beste Gewinnchance unter den Sprechtheater-Titeln, erwartbar plus 3.000 bis 4.000 Euro. Wer den Vorgänger gesehen hat, ist im Verteiler: gezielt anschreiben."}],
- ["große zeit", {av:4,score:80,prio:"B",rolle:"IMAGETREIBER",sv:true,preise:[49,43,37,29],plaetze:900,auslastung:62,faktor:0.85,
-   text:"Der Leuchtturm des Frühjahrs und inzwischen der einzige Abend der Saison mit überregionaler Zugkraft: Nicholas Ofczarek und Robert Palfrader, zwei der bekanntesten Bühnen- und Fernsehgesichter Österreichs, in einer Produktion mit Wiener Renommee – in dieser Region konkurrenzlos. Die Gage ist im kleinen Ring-Setup nicht einspielbar, also groß denken: als SV führen, 900 Plätze einrichten, Premiumpreise, Konstanz und die Schweiz aktiv bewerben. Break-even um 69 Prozent, erwartet ein Minus von 1.500 bis 3.000 Euro bei maximalem Imageertrag. Seit die deutschsprachige Erstaufführung aus dem Plan gefallen ist, trägt dieser eine Abend die gesamte überregionale Erzählung der Saison – entsprechend früh und entsprechend laut muss er beworben werden."}]
+ ["1. symphoniker", {av:5,score:63,prio:"B",rolle:"BASIS",sv:false,
+   text:"Saisonauftakt für die Abo-Basis, getragen von den Symphonikern Konstanz. 25/26 kamen 525 Besucher, das Genre liegt real bei 63 Prozent Auslastung. Kein Presse-, kein Neukundenpotenzial, dafür verlässliche Ringversorgung und ein ruhiger Start. Der Preisrahmen der Entgeltordnung ist nach oben nicht ausgereizt. Als Basis führen, keine Sonderanstrengung."}],
+ ["marmen", {av:5,score:62,prio:"B",rolle:"PFLEGE",sv:false,
+   text:"Junges internationales Streichquartett mit Wettbewerbsvita – künstlerisch die stärkste der drei Kammerpositionen, im Verkauf ohne Zugkraft, weil der Name hier niemandem etwas sagt. Genau deshalb gehören Programm und Herkunft in jede Ankündigung, nicht der Ensemblename allein. Wirtschaftlich Kulturauftrag: Kammerkonzerte erreichten 25/26 im Schnitt 57 Prozent bei effektiv rund 18 Euro je Besucher. Besetzung und Gagenhöhe kenne ich nicht – bewertet ist hier die Rolle im Spielplan, nicht der Vertrag."}],
+ ["kleine eheverbrechen", {av:5,score:64,prio:"B",rolle:"BASIS",sv:false,
+   text:"Solider Boulevard-Zweipersonenabend, Komödienring-Kernware für 50+. Läuft überall, ersetzt nichts, schadet nichts – im Wettbewerbsvergleich austauschbar, Radolfzell und Tuttlingen spielen Vergleichbares. Komödien erreichten 25/26 verlässlich 450 bis 680 Besucher. Buchen."}],
+ ["rico", {av:5,score:75,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Der stärkste Kinderstoff der Saison: Steinhöfels Rico und Oskar ist Schullektüre in der Region, verfilmt, preisgekrönt und bei Lehrkräften gesetzt. Das ist kein Werbe-, sondern ein Vertriebsthema – ein Mailing an die Grund- und weiterführenden Schulen im Landkreis im September füllt den Montagvormittag. Kindertheater lief 25/26 mit 90 Prozent als stärkstes Genre des Hauses. Buchen und eine zweite Vorstellung am selben Tag prüfen, die Anreise ist ohnehin bezahlt."}],
+ ["der sohn", {av:5,score:70,prio:"B",rolle:"PFLEGE",sv:false,
+   text:"Florian Zeller ist dramatisch erstklassig, künstlerisch das stärkste reine Schauspiel der Saison. Das Thema, die Depression eines Jugendlichen, ist schwer, aber anschlussfähig: Schulkooperationen, Beratungsstellen, eine Einführung vor der Vorstellung. So wird aus einem planmäßigen Ring-Zuschuss ein Reputationsgewinn. Buchen und aktiv rahmen statt nur zeigen."}],
+ ["fitzek", {av:5,score:88,prio:"A",rolle:"CASHCOW",sv:true,
+   text:"Der wirtschaftliche Motor der Saison und der Presse-Aufhänger, an dem der Südkurier hängen bleibt. Bestseller-Bekanntheit erledigt die halbe Werbung, das Einzugsgebiet reicht bis in die Schweiz, als Sonderveranstaltung sind selbstbewusste Preise durchsetzbar – volles Haus einrichten. Zwei Dinge sind dringend: Der Abend steht nur auf optioniert, obwohl ein erheblicher Teil der Saisonbilanz an ihm hängt, hier gehört als erstes ein Vertrag hin. Und er ist der einzige Novembertermin – fällt die Option, ist der stärkste Theatermonat des Jahres leer."}],
+ ["streichquintett", {av:5,score:66,prio:"B",rolle:"PFLEGE",sv:false,
+   text:"Das stärkste Kammerprogramm der Saison: Berliner-Philharmoniker-Besetzung, kluge Dramaturgie, Feuilleton-tauglich. Wirtschaftlich bleibt es Kulturauftrag, ein planmäßiger Zuschussfall wie die ganze Reihe. Der Termin am Freitag vor dem zweiten Advent ist gut gewählt, die einzige Konkurrenz im eigenen Haus ist der Komödienabend am Folgetag – beide Zielgruppen überschneiden sich kaum. Die Geschichte hinter dem Programm gehört ins Marketing, Richtung VHS, Literaturkreise, Musikschule."}],
+ ["tannenbaum", {av:5,score:63,prio:"B",rolle:"BASIS",sv:false,
+   text:"Adventskomödie am zweiten Adventswochenende – der Termin verkauft mit. Klassische Ringware für 50+, keine überregionale Sichtbarkeit, aber verlässliche Mechanik aus Weihnachtsstimmung und Komödienbasis. Buchen; die Gage liegt erfahrungsgemäß leicht über eurem Komödien-Schnitt, bei Vertragsschluss nachverhandeln."}],
+ ["gestiefelte kater", {av:5,score:72,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Märchenstoff im Advent, die sicherste Bank im Kinderprogramm. Die beiden Vorstellungen am 6. und 7. Dezember stehen als eigene Termine im Plan, jede also mit eigener Kapazität und eigener Kalkulation. Getragen von Schulen und Kitas, nicht von Werbung – über ein Mailing im September sichern. Bucht sich fast von selbst ein."}],
+ ["robin hood", {av:5,score:60,prio:"C",rolle:"BASIS",sv:false,
+   text:"Robin Hood ist als Stoff unproblematisch und für Grundschulen gut buchbar. Das Problem ist der Kalender: Mit dem Gestiefelten Kater am 6. und 7. Dezember liegen drei Kindervorstellungen in acht Tagen, alle aus demselben Schul- und Kita-Verteiler. Die dritte nimmt der zweiten das Publikum, nicht umgekehrt. Empfehlung: verschieben, am besten in den leeren November oder in die dünne Strecke nach den Fastnachtsferien. Bleibt der Termin, die Schulen getrennt ansprechen und vorsichtig planen."}],
+ ["hauspostille", {av:5,score:78,prio:"A",rolle:"IMAGETREIBER",sv:true,
+   text:"Eine der drei Profilproduktionen der Saison, und die einzige, die ein Publikum anspricht, das das Haus über Abo und Ring nicht erreicht: jünger, städtischer, erlebnisorientiert. Lars Eidinger ist als Schaubühnen-Schauspieler und über Film und Öffentlichkeit weit über das Theaterpublikum hinaus bekannt, Brechts Hauspostille gibt dem Abend einen Text, der Haltung hat und nicht nach Klassikerpflege klingt. Das Format steht zwischen Literatur, Musik und Bühnenereignis – es konkurriert nicht mit dem Sprechtheater, es ergänzt es. Entsprechend eigenständig bewerben: Social-first, Erlebnisversprechen, Kooperation mit Buchhandel und Hochschulen, und ausdrücklich nicht im Ring-Layout eines Schauspielabends. Als Sonderveranstaltung führen, damit die Preisgestaltung dem Anlass folgen kann."}],
+ ["eidinger", {av:5,score:78,prio:"A",rolle:"IMAGETREIBER",sv:true,
+   text:"Eine der drei Profilproduktionen der Saison, und die einzige, die ein Publikum anspricht, das das Haus über Abo und Ring nicht erreicht: jünger, städtischer, erlebnisorientiert. Lars Eidinger ist als Schaubühnen-Schauspieler und über Film und Öffentlichkeit weit über das Theaterpublikum hinaus bekannt, Brechts Hauspostille gibt dem Abend einen Text, der Haltung hat und nicht nach Klassikerpflege klingt. Das Format steht zwischen Literatur, Musik und Bühnenereignis – es konkurriert nicht mit dem Sprechtheater, es ergänzt es. Entsprechend eigenständig bewerben: Social-first, Erlebnisversprechen, Kooperation mit Buchhandel und Hochschulen, und ausdrücklich nicht im Ring-Layout eines Schauspielabends. Als Sonderveranstaltung führen, damit die Preisgestaltung dem Anlass folgen kann."}],
+ ["mein herz", {av:5,score:60,prio:"C",rolle:"IMAGETREIBER",sv:false,
+   text:"Ein Großer Abend aus Text und Live-Musik, gedacht für ein Publikum ab 40, das keinen ganzen Theaterabend will, und überwiegend im Freiverkauf. Den Titel kenne ich nicht belastbar, Besetzung und Gage müsst ihr selbst gegenrechnen. Der Termin ist der kritische Punkt: Freitag vor dem Neujahrskonzert heißt, das kleinere Format steht im Schatten des größten Verkaufsschlagers des Hauses und teilt sich mit ihm die Presse dieses Wochenendes. In den November oder in den März schieben, dort ist es das einzige Angebot."}],
+ ["neujahr", {av:5,score:90,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Die verlässlichste Kasse des Hauses: 25/26 praktisch ausverkauft. Voll auf die maximale Kapazität ausbauen und die Neujahrspreise ausschöpfen. Ein Punkt gehört geklärt, bevor die Kalkulation stimmt: Der Abend ist mit dem Neujahrsempfang gekoppelt. Gehen Plätze als Einladung der Stadt heraus, sind das keine verkaufbaren Plätze – sie gehören als gesperrte Plätze in die Kalkulation, sonst rechnet sich der Abend auf dem Papier besser als in der Kasse. Auch dann bleibt er die Produktion, die Kammerkonzerte und Wagnisse mitfinanziert."}],
+ ["monster auf der couch", {av:5,score:82,prio:"A",rolle:"IMAGETREIBER",sv:false,
+   text:"Die zweite der drei Profilproduktionen, und die mit der größten Breite: Andrea Sawatzki und Christian Berkel sind zwei Gesichter, die in Singen niemandem erklärt werden müssen – bekannt aus Fernsehen und Kino, als Paar zusätzlich öffentlich präsent, mit einem Publikum, das weit über die Ringe hinausreicht. Das ist die verlässlichste Reichweite im Sprechtheater dieser Saison und der Abend, über den in der Region am ehesten gesprochen wird. Schauspiel ist mit 56 Prozent sonst das schwächste Genre des Hauses im Freiverkauf; genau deshalb ist ein Abend mit zwei bundesweit bekannten Namen hier kein Luxus, sondern der Beleg, dass Sprechtheater in Singen funktioniert, wenn eine Marke dahintersteht. Das konkrete Format der Produktion kann ich nicht verifizieren – bewertet ist die Zugkraft der Besetzung. Früh bewerben, Kontingente für Firmen und Gruppen anbieten, und den Abend gemeinsam mit Ofczarek und Eidinger als Reihe großer Abende führen."}],
+ ["brodas", {av:5,score:73,prio:"B",rolle:"IMAGETREIBER",sv:false,
+   text:"Der einzige Musik- und Show-Termin der Saison und damit der einzige Zugang zu Familien und Publikum unter 30. Urban Dance funktioniert über Bild und Bewegung, nicht über Text – Social-first bewerben, mit Tanzschulen und Vereinen arbeiten, Gruppenkontingente anbieten. Strategisch das eigentliche Problem: Ein Abend ist keine Zielgruppenarbeit. Wenn das junge Publikum wirklich kommen soll, braucht es einen zweiten Termin dieser Art in der leeren Strecke zwischen Mitte Februar und Ende März."}],
+ ["zirkus der rätsel", {av:5,score:76,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Die drei Fragezeichen Kids sind eine eingeführte Marke mit eigener Leserschaft in der Zielgruppe 6 bis 11 – das verkauft sich über den Namen, nicht über die Inszenierung. Montagstermin, also Schulvorstellung: früh über die Grundschulen sichern, parallel Buchhandel und Stadtbibliothek als Multiplikatoren einbinden. Gehört zu den Produktionen, die die Saison wirtschaftlich tragen."}],
+ ["lustigen weiber", {av:5,score:66,prio:"B",rolle:"BASIS",sv:false,
+   text:"Shakespeare-Boulevard, verlässliche 50+-Ware, Februar-Termin unkritisch. Nach den eingetragenen Kosten die günstigste Komödienposition des Plans und damit die mit der besten Ergebnischance im Genre. Buchen – eine der wenigen Positionen, die die Saisonbilanz entlasten können."}],
+ ["klaviertrio", {av:5,score:56,prio:"C",rolle:"PFLEGE",sv:false,
+   text:"Dritte Kammerposition, planmäßiger Zuschussfall wie die ganze Reihe – als Kulturauftrag in Ordnung. Der Eintrag ist es noch nicht: Klaviertrio ist kein Titel, sondern eine Besetzungsangabe. So steht der Abend im Programmheft ohne jedes Verkaufsargument. Vor Drucklegung gehören Ensemble und Programm hinein; ein benanntes Werk zieht in dieser Reihe mehr als jede Anzeige. Künstlerische Profilierung über die Programmatik kostet nichts extra."}],
+ ["pumuckl", {av:5,score:76,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Selbstläufer-Marke mit frischem Rückenwind aus der Serien-Neuauflage, dazu ein Montagstermin, den die Schulen zuverlässig füllen. Im Plan steht aktuell eine Vorstellung: Die zweite am Folgetag gehört fixiert, sie bringt bei bereits bezahlter Anreise spürbaren Zusatzerlös bei minimalen Mehrkosten."}],
+ ["conni", {av:5,score:73,prio:"A",rolle:"CASHCOW",sv:false,
+   text:"Conni ist die Marke für Vorschule und die ersten Grundschuljahre, das Musicalformat rechtfertigt einen höheren Preis als Sprechtheater für Kinder. Montagstermin, also wieder Schulschiene, diesmal ohne Konkurrenz im eigenen Haus. Der Abend ist zugleich der Beleg für ein strukturelles Problem: Für Erwachsene findet zwischen dem 12. Februar und dem 24. März nichts statt."}],
+ ["gin romm", {av:5,score:70,prio:"B",rolle:"CASHCOW",sv:false,
+   text:"Ein Zweipersonenstück über zwei alte Menschen, ein Kartenspiel und die Abrechnung mit dem eigenen Leben – bitterkomisch, preisgekrönt, für das Kernpublikum ab 55 ein gesetzter Abend. Die wirtschaftliche Frage hängt am Namen in der Klammer: Steht dort ein bundesweit bekanntes Gesicht, trägt der Abend deutlich über der Komödien-Norm und rechtfertigt Preise am oberen Rand. Ich kann die Besetzung von hier aus nicht verifizieren – prüft das und setzt die Preise entsprechend. Und im Programmheft gehört der Name in die Zeile, nicht in eine Klammer."}],
+ ["3. symphoniker", {av:5,score:62,prio:"B",rolle:"BASIS",sv:false,
+   text:"Symphonischer Saisonabschluss. Die Nummerierung ist inzwischen sauber, eins bis drei, das alte Durcheinander ist erledigt. Offen bleibt die Schreibweise: Zwei der drei Konzerte heißen Symphoniker Konstanz, das mittlere heißt Symphoniekonzert mit angehängtem Neujahrsempfang. Entweder ist es eine Reihe, dann heißt sie durchgehend gleich, oder es sind drei Einzelabende – vor der Drucklegung entscheiden."}],
+ ["alle 7 wellen", {av:5,score:71,prio:"B",rolle:"CASHCOW",sv:false,
+   text:"Glattauer-Fortsetzung, und der Vorgänger Gut gegen Nordwind lief 25/26 in Singen nachweislich gut, mit 519 Besuchern. Bekannter Stoff, treues Publikum ab 45, moderate Gage – unter den Sprechtheater-Titeln die beste Ergebnischance. Wer den Vorgänger gesehen hat, ist im Verteiler: gezielt anschreiben."}],
+ ["große zeit", {av:5,score:84,prio:"A",rolle:"IMAGETREIBER",sv:true,
+   text:"Die erste der drei Profilproduktionen und die mit dem höchsten künstlerischen Anspruch: Nicholas Ofczarek und Robert Palfrader, zwei der bekanntesten Bühnen- und Fernsehgesichter Österreichs, in einer Produktion mit Wiener Renommee – in dieser Region konkurrenzlos. Das ist der Abend für die überregionale Profilierung, für Feuilleton und Fachpresse und für den anspruchsvollen Teil des Stammpublikums. Die Gage ist im kleinen Ring-Layout nicht einspielbar, also groß denken: als Sonderveranstaltung führen, die Kapazität hochziehen, Premiumpreise ansetzen, Konstanz und die Schweiz aktiv bewerben. Er ist nicht der Rettungsanker der Spielzeit und muss es auch nicht sein – gemeinsam mit Sawatzki/Berkel und Eidinger bildet er die Reihe großer Abende, die diese Saison nach außen trägt."}]
 ];
 function vorgabeFuer(v){
   const t = (v.titel||"").toLowerCase();
@@ -1059,110 +1089,207 @@ function analyseVon(v){
   const vg = vorgabeFuer(v);
   const vorhanden = daten.analyse[v.vid];
   if(!vorhanden || (vg && (vorhanden.av||0) < (vg.av||0))){
-    const sv = SPARTEN_VORGABE[v.sparte];   /* v5: Startwerte je Sparte, falls keine Einzelvorgabe existiert */
-    daten.analyse[v.vid] = vg ? JSON.parse(JSON.stringify(vg)) :
-      Object.assign({score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false, preise:[39,34,28,19], plaetze:838, auslastung:55, faktor:0.75,
-       text:"Neu angelegte Produktion – Analysewerte bitte prüfen und anpassen (Vorbelegung: Standardannahmen)."},
-       sv ? JSON.parse(JSON.stringify(sv)) : {});
+    const sv = SPARTEN_VORGABE[v.sparte];
+    /* v8: Kalkulationsdaten, die das Haus selbst eingetragen hat, überleben jedes
+       Vorgaben-Update – ersetzt wird nur die inhaltliche Einschätzung. */
+    const bewahrt = {};
+    if(vorhanden){
+      if(vorhanden.kat!==undefined) bewahrt.kat = vorhanden.kat;
+      if(vorhanden.gesperrt!==undefined) bewahrt.gesperrt = vorhanden.gesperrt;
+      if(vorhanden.verkauft!==undefined) bewahrt.verkauft = vorhanden.verkauft;
+    }
+    daten.analyse[v.vid] = Object.assign(
+      {score:0, prio:"C", rolle:"UNGEKLÄRT", sv:false,
+       text:"Neu angelegte Produktion – Einschätzung bitte ergänzen."},
+      sv ? JSON.parse(JSON.stringify(sv)) : {},
+      vg ? JSON.parse(JSON.stringify(vg)) : {},
+      bewahrt);
   }
-  return daten.analyse[v.vid];
+  return katNormieren(daten.analyse[v.vid]);
 }
-/* Geprüfte Kandidaten – analysiert, aber noch nicht in der Planung (aktuell leer:
-   Masou & Leise und Mein schwarzer Teufel wurden in die Planung übernommen und
-   werden dort per Titel-Zuordnung mit Volltext-Analysen versehen) */
 const KANDIDATEN = [];
-const KAT_MIX = [0.30,0.30,0.25,0.15];
-function wirtschaft(v){
-  const a = analyseVon(v);
-  const brutto = a.preise.reduce((s,p,i)=>s+(+p||0)*KAT_MIX[i],0);
-  const eff = brutto * (+a.faktor||0.75);
-  const tickets = Math.round((+a.plaetze||0) * (+a.auslastung||0) / 100);
-  const erloes = Math.round(tickets * eff);
-  const kosten = gesamt(v);
-  const be = eff>0 && a.plaetze>0 ? Math.round(kosten/eff/(+a.plaetze)*100) : null;
-  return {eff, tickets, erloes, kosten, ergebnis: erloes-kosten, breakeven: be};
+
+/* ================= v8: KALKULATION JE PRODUKTION =================
+   Grundsatz: Es gibt genau eine Quelle für Kosten (kostenBasis) und genau eine für
+   Erlöse (die eingetragenen Preiskategorien). Nichts wird pauschal geschätzt.
+   Ohne vollständig hinterlegte Ticketpreise werden weder Erlöse noch Durchschnittspreise,
+   Break-even-Werte oder Ergebnisse ausgewiesen. */
+const KAT_NAMEN = ["Kategorie 1","Kategorie 2","Kategorie 3","Kategorie 4"];
+function katNormieren(a){
+  if(!Array.isArray(a.kat) || a.kat.length===0){
+    a.kat = KAT_NAMEN.map(n=>({name:n, plaetze:0, preis:0, minderung:0}));
+  }
+  while(a.kat.length < 4) a.kat.push({name:KAT_NAMEN[a.kat.length]||("Kategorie "+(a.kat.length+1)), plaetze:0, preis:0, minderung:0});
+  a.kat.forEach((k,i)=>{
+    if(!k.name) k.name = KAT_NAMEN[i]||("Kategorie "+(i+1));
+    k.plaetze = Math.max(0, +k.plaetze||0);
+    k.preis = Math.max(0, +k.preis||0);
+    k.minderung = Math.min(100, Math.max(0, +k.minderung||0));
+  });
+  if(a.gesperrt===undefined) a.gesperrt = 0;
+  if(a.verkauft===undefined) a.verkauft = null;
+  return a;
 }
-function analyseAendern(vid, feld, wert, idx){
+/* Anteil des Bruttopreises, der nach Umsatzsteuer und VVK-/Systemgebühr im Haus bleibt. */
+function nettoFaktor(){
+  const u = +daten.kalk.ust||0, g = +daten.kalk.vvk||0;
+  return 1/(1+u/100) - g/100;
+}
+/* Verkaufsverteilung: proportional zur freien Platzkapazität der Kategorien.
+   Ist eine Kategorie ausgeschöpft, wandert der Rest auf die verbleibenden Kategorien. */
+function verteileTickets(kat, anzahl){
+  const res = kat.map(()=>0);
+  let offen = Math.max(0, anzahl);
+  let idx = kat.map((k,i)=>i).filter(i=>kat[i].plaetze>0);
+  let schutz = 0;
+  while(offen > 0.000001 && idx.length>0 && schutz++ < 25){
+    const restKap = idx.reduce((s,i)=>s+(kat[i].plaetze-res[i]),0);
+    if(restKap <= 0) break;
+    const verteilbar = Math.min(offen, restKap);
+    let vergeben = 0;
+    const weiter = [];
+    idx.forEach(i=>{
+      const frei = kat[i].plaetze - res[i];
+      let z = verteilbar * (frei/restKap);
+      if(z >= frei - 0.000001){ z = frei; } else { weiter.push(i); }
+      res[i] += z; vergeben += z;
+    });
+    offen -= vergeben;
+    idx = weiter;
+  }
+  return res;
+}
+function rechnung(v){
+  const a = analyseVon(v);
+  const kat = a.kat.filter(k=>k.plaetze>0);
+  const kapazitaet = kat.reduce((s,k)=>s+k.plaetze,0);
+  const ohnePreis = kat.filter(k=>k.preis<=0).map(k=>k.name);
+  const kosten = gesamt(v);
+  const gesperrt = Math.max(0, +a.gesperrt||0);
+  const nf = nettoFaktor();
+  const zeilen = kat.map(k=>{
+    const bruttoEff = k.preis * (1 - k.minderung/100);
+    return {name:k.name, plaetze:k.plaetze, preis:k.preis, minderung:k.minderung,
+      bruttoEff:bruttoEff, netto:bruttoEff*nf,
+      maxBrutto:k.plaetze*k.preis, maxNetto:k.plaetze*bruttoEff*nf};
+  });
+  const basis = {kapazitaet, kosten, zeilen, gesperrt, fehlend:ohnePreis, verkauftRoh:a.verkauft};
+  if(kapazitaet<=0) return Object.assign(basis, {vollstaendig:false, grund:"keine Plätze je Kategorie hinterlegt"});
+  if(ohnePreis.length>0) return Object.assign(basis, {vollstaendig:false, grund:"Ticketpreise noch nicht vollständig hinterlegt"});
+  const maxBrutto = zeilen.reduce((s,z)=>s+z.maxBrutto,0);
+  const maxNetto = zeilen.reduce((s,z)=>s+z.maxNetto,0);
+  const gewichtetNetto = maxNetto / kapazitaet;
+  const gewichtetBrutto = zeilen.reduce((s,z)=>s+z.plaetze*z.bruttoEff,0) / kapazitaet;
+  const beTickets = gewichtetNetto>0 ? Math.ceil(kosten/gewichtetNetto) : null;
+  const beProzent = beTickets===null ? null : beTickets/kapazitaet*100;
+  const erreichbar = beTickets!==null && beTickets<=kapazitaet;
+  const beVerteilung = beTickets===null ? null : verteileTickets(kat, Math.min(beTickets, kapazitaet));
+  let verkauft=null, verteilung=null, erloes=null, auslastung=null, ergebnis=null;
+  if(a.verkauft!==null && a.verkauft!==undefined && a.verkauft!==""){
+    verkauft = Math.max(0, Math.min(kapazitaet, +a.verkauft||0));
+    verteilung = verteileTickets(kat, verkauft);
+    erloes = verteilung.reduce((s,n,i)=>s+n*zeilen[i].netto, 0);
+    auslastung = verkauft/kapazitaet*100;
+    ergebnis = erloes - kosten;
+  }
+  return Object.assign(basis, {vollstaendig:true, maxBrutto, maxNetto, gewichtetNetto, gewichtetBrutto,
+    beTickets, beProzent, erreichbar, beVerteilung, verkauft, verteilung, erloes, auslastung, ergebnis});
+}
+function katAendern(vid, idx, feld, wert){
   const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
   const a = analyseVon(v);
-  if(feld==="preis") a.preise[idx] = Math.max(0, +wert||0);
-  else if(feld==="sv") a.sv = !!wert;
-  else if(feld==="faktor") a.faktor = Math.min(1, Math.max(0.3, +String(wert).replace(",",".")||0.75));
-  else a[feld] = Math.max(0, +wert||0);
-  speichern(); zeigeAnalyse();
+  const z = Math.max(0, +String(wert).replace(",",".")||0);
+  if(feld==="minderung") a.kat[idx].minderung = Math.min(100, z);
+  else a.kat[idx][feld] = z;
+  speichern(); zeigeKalkulation();
+}
+function kalkFeldAendern(vid, feld, wert){
+  const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
+  const a = analyseVon(v);
+  if(feld==="verkauft"){
+    a.verkauft = (String(wert).trim()==="") ? null : Math.max(0, +wert||0);
+  } else {
+    a[feld] = Math.max(0, +wert||0);
+  }
+  speichern(); zeigeKalkulation();
 }
 function saisonBilanz(){
-  const aktiv = daten.veranstaltungen.filter(zaehltBudget);
-  let erloes=0, kosten=0, ungeklaert=0;
-  const delta = pp => aktiv.reduce((s,v)=>{
-    const a=analyseVon(v);
-    const brutto=a.preise.reduce((x,p,i)=>x+(+p||0)*KAT_MIX[i],0)*(+a.faktor||0.75);
-    return s+Math.round((+a.plaetze||0)*Math.min(100,Math.max(0,(+a.auslastung||0)+pp))/100*brutto);
-  },0);
-  aktiv.forEach(v=>{
-    const w = wirtschaft(v);
-    erloes += w.erloes; kosten += w.kosten;
-    if(analyseVon(v).rolle==="UNGEKLÄRT") ungeklaert++;
+  const kb = kostenBasis();
+  let erloes=0, mitErloes=0, kalkulierbar=0, offen=0, unerreichbar=0;
+  kb.aktiv.forEach(v=>{
+    const r = rechnung(v);
+    if(!r.vollstaendig){ offen++; return; }
+    kalkulierbar++;
+    if(!r.erreichbar) unerreichbar++;
+    if(r.erloes!==null){ erloes += r.erloes; mitErloes++; }
   });
-  return {erloes, kosten, ergebnis: erloes-kosten, worst: delta(-10)-kosten, best: delta(10)-kosten, ungeklaert};
+  const vollstaendig = offen===0 && mitErloes===kb.anzahlAktiv && kb.anzahlAktiv>0;
+  return {kosten:kb.gesamt, kostenBudget:kb.budgetwirksam, kostenNeutral:kb.summeNeutral,
+    anzahl:kb.anzahlAktiv, anzahlNeutral:kb.anzahlNeutral, kalkulierbar, offen, mitErloes, unerreichbar,
+    erloes: vollstaendig ? erloes : null, ergebnis: vollstaendig ? erloes-kb.gesamt : null};
 }
 function zeigeAnalyse(){
   const b = saisonBilanz();
+  const kb = kostenBasis();
   const liste = sortiert().filter(zaehltBudget);
   const karten = liste.map(v=>{
-    const a = analyseVon(v), w = wirtschaft(v);
-    const kammer = v.sparte==="Kammerkonzert";
+    const a = analyseVon(v), r = rechnung(v);
     return `<div class="akarte">
       <div class="akopf">
         <span class="score prio${a.prio}">${a.score||"–"}</span>
-        <div><b style="font-size:16px">${v.titel}</b><div class="fussnote">${datumDE(v.datum)} · ${v.sparte} · Kosten ${euro(w.kosten)} · Priorität ${a.prio}</div></div>
+        <div><b style="font-size:16px">${v.titel}</b><div class="fussnote">${datumDE(v.datum)} · ${v.sparte} · Gage und Nebenkosten ${euro(r.kosten)} · Priorität ${a.prio}${v.budgetneutral?' · <span class="bneutral">budgetneutral</span>':""}</div></div>
         <span style="flex:1"></span>
         <span class="rolle">${a.rolle}</span>
       </div>
       <div class="atext">${a.text}</div>
-      <div class="preiszeile fussnote" style="margin:8px 0;">
-        <b>Preisempfehlung:</b>
-        K1 <input type="number" value="${a.preise[0]}" onchange="analyseAendern(${v.vid},'preis',this.value,0)"> €
-        K2 <input type="number" value="${a.preise[1]}" onchange="analyseAendern(${v.vid},'preis',this.value,1)"> €
-        K3 <input type="number" value="${a.preise[2]}" onchange="analyseAendern(${v.vid},'preis',this.value,2)"> €
-        ${kammer?"":`K4 <input type="number" value="${a.preise[3]}" onchange="analyseAendern(${v.vid},'preis',this.value,3)"> €`}
-        &nbsp; <label><input type="checkbox" ${a.sv?"checked":""} onchange="analyseAendern(${v.vid},'sv',this.checked)" style="width:auto"> SV (freie Preise)</label>
-        ${a.sv?'<span class="pille sgebucht">SV – Tableau-Rahmen gilt nicht</span>':'<span class="fussnote">Rahmen lt. Entgeltordnung beachten</span>'}
-      </div>
       <div class="araster">
-        <div class="afeld">Plätze eingerichtet<br><input type="number" value="${a.plaetze}" onchange="analyseAendern(${v.vid},'plaetze',this.value)"> <span class="fussnote">max 1123</span></div>
-        <div class="afeld">Erwartete Auslastung<br><input type="number" value="${a.auslastung}" onchange="analyseAendern(${v.vid},'auslastung',this.value)"> %</div>
-        <div class="afeld">Erlösfaktor (Abo/Erm.)<br><input type="text" value="${String(a.faktor).replace(".",",")}" onchange="analyseAendern(${v.vid},'faktor',this.value)"></div>
-        <div class="afeld">Tickets erwartet<br><b>${w.tickets}</b> <span class="fussnote">à ${w.eff.toFixed(2).replace(".",",")} € eff.</span></div>
-        <div class="afeld">Ticketerlös erwartet<br><b>${euro(w.erloes)}</b></div>
-        <div class="afeld">Break-even<br><b>${w.breakeven===null?"–":(w.breakeven>100?'<span class="ergVerlust">'+w.breakeven+' % – unerreichbar</span>':w.breakeven+" % Auslastung")}</b></div>
-        <div class="afeld">Erwartetes Ergebnis<br><b class="${w.ergebnis>=0?"ergGewinn":"ergVerlust"}">${w.ergebnis>=0?"+":""}${euro(w.ergebnis)}</b></div>
+        <div class="afeld">Gage und Nebenkosten<br><b>${euro(r.kosten)}</b> <span class="fussnote">aus den Einzelpositionen</span></div>
+        <div class="afeld">Verkaufbare Plätze<br><b>${r.kapazitaet>0?r.kapazitaet:"–"}</b> <span class="fussnote">${r.kapazitaet>0?"aus den Kategorien":"noch nicht hinterlegt"}</span></div>
+        ${r.vollstaendig ? `
+        <div class="afeld">Ø Nettoerlös je Ticket<br><b>${r.gewichtetNetto.toFixed(2).replace(".",",")} €</b> <span class="fussnote">gewichtet nach Plätzen</span></div>
+        <div class="afeld">Break-even<br><b class="${r.erreichbar?"":"ergVerlust"}">${r.beTickets} Plätze · ${r.beProzent.toFixed(1).replace(".",",")} %</b>${r.erreichbar?"":'<span class="fussnote" style="color:var(--rot)">nicht erreichbar</span>'}</div>
+        ${r.verkauft===null?'<div class="afeld">Geplanter Verkauf<br><b>–</b> <span class="fussnote">im Reiter Kalkulation eintragen</span></div>'
+          :`<div class="afeld">Geplanter Verkauf<br><b>${Math.round(r.verkauft)} Plätze · ${r.auslastung.toFixed(1).replace(".",",")} %</b></div>
+            <div class="afeld">Ergebnis nach Plan<br><b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b></div>`}
+        ` : `
+        <div class="afeld" style="grid-column:span 2;background:var(--gelb-hell)"><b>Nicht berechenbar</b><br>
+          <span class="fussnote">${r.grund}. Ohne Preise je Kategorie gibt es hier weder Durchschnittserlös noch Break-even noch Ergebnis – die Werte werden bewusst nicht geschätzt. Eintragen im Reiter <b>Kalkulation</b>.</span></div>
+        `}
       </div>
     </div>`;
   }).join("");
   document.getElementById("inhalt").innerHTML = `
     <h2>Strategische Analyse Saison ${daten.saisonAktuell}</h2>
-    <div class="hinweis"><b>Was diese Saison spricht:</b> 24 Termine, davon sieben Kindervorstellungen – für das erwachsene Abendpublikum bleiben 17 Abende. Getragen wird die Saison von drei Positionen: Fitzek als Massenanker, das Neujahrskonzert als verlässlichste Kasse des Hauses und ein auffällig starkes Kinderprogramm mit Rico und Oskar, Pumuckl, den Drei Fragezeichen Kids und Conni. Das ist wirtschaftlich vernünftig und handwerklich sauber, aber es ist noch keine Erzählung. Überregional trägt genau ein Abend: Die Große Zeit mit Ofczarek und Palfrader im Mai. Seit die deutschsprachige Erstaufführung aus dem Plan gefallen ist, gibt es nichts mehr, worüber jemand außerhalb des Landkreises schreiben würde – dieser eine Abend muss die gesamte Aufmerksamkeit der Saison tragen und gehört entsprechend früh in die Kommunikation. Zwei Lücken sind gravierender als jede Einzelbewertung: Der November enthält einen einzigen Termin, ausgerechnet den stärksten, und der steht nur auf optioniert; und für das Erwachsenenpublikum liegen vier Lücken von einem Monat oder mehr im Plan, die größte mit 41 Tagen zwischen dem 12. Februar und dem 24. März. Wer sechs Wochen nichts anzubieten hat, verliert die Gewohnheit seines Publikums – und die Gewohnheit ist das Einzige, was den wegbrechenden Abo-Sockel ersetzen kann. Die Abo-Basis erodiert strukturell, minus 37 Prozent Plätze seit 2020 bei minus 65 Prozent Neuanmeldungen, überwiegend demografisch und damit nicht rückholbar. Und mit Brodas steht genau ein Musik- und Show-Termin im Plan, also genau ein Angebot für alle unter 40.</div>
-    <h3>Saisonbilanz (Ticketerlöse vs. Gagen + Nebenkosten)</h3>
+    <div class="hinweis"><b>Die Saison trägt auf drei Schultern, nicht auf einer.</b> Ihre öffentliche Kraft entsteht aus dem Zusammenspiel von drei großen Abenden, die verschiedene Aufgaben erfüllen und verschiedene Menschen ins Haus holen. Keiner von ihnen ist der Anker, an dem die Spielzeit hängt, und keiner muss die kommunikative Arbeit allein leisten.
+      <b>Die Große Zeit</b> mit Nicholas Ofczarek steht für den künstlerischen Anspruch und die überregionale Profilierung: Produktion mit Wiener Renommee, ein Abend, über den auch außerhalb des Landkreises geschrieben wird, und das Argument gegenüber Feuilleton, Fachpresse und dem anspruchsvollen Teil des Stammpublikums.
+      <b>Monster auf der Couch</b> mit Andrea Sawatzki und Christian Berkel steht für Publikumsbekanntheit und Breite: zwei Gesichter, die in Singen niemandem erklärt werden müssen, ein Abend mit hoher Anschlussfähigkeit weit über die Ringe hinaus, und damit die verlässlichste Reichweite im Sprechtheater dieser Saison.
+      <b>Lars Eidingers Hauspostille</b> steht für Gegenwart und Format: ein eigenständiger Abend zwischen Literatur, Musik und Bühnenereignis, der ein anderes Publikum anspricht als das klassische Schauspiel – jünger, städtischer, erlebnisorientiert, genau jene Gruppe, die das Haus über das Abo nicht mehr erreicht.
+      Zusammen ergeben die drei etwas, das keine einzelne Produktion leisten kann: Anspruch, Bekanntheit und Gegenwart in einer Spielzeit. Genau so gehören sie auch kommuniziert – als Reihe großer Abende mit gemeinsamer Klammer, nicht als drei unverbundene Gastspiele und erst recht nicht als ein Leuchtturm plus Beiprogramm.
+      Getragen wird die Saison wirtschaftlich daneben von Fitzek, dem Neujahrskonzert und einem ungewöhnlich starken Kinderprogramm. Zwei strukturelle Punkte bleiben unabhängig von jeder Einzelbewertung: Der November enthält einen einzigen Termin, und für das erwachsene Abendpublikum liegen mehrere Lücken von einem Monat und mehr im Plan – die größte mit 41 Tagen zwischen dem 12. Februar und dem 24. März.</div>
+
+    <h3>Kostenbasis der Saison</h3>
     <div class="karten">
-      <div class="karte"><div class="wert">${euro(b.kosten)}</div><div class="label">Produktionskosten (ohne „abgesagt")</div></div>
-      <div class="karte"><div class="wert">${euro(b.erloes)}</div><div class="label">Erwartete Ticketerlöse</div></div>
-      <div class="karte" style="${b.ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${b.ergebnis>=0?"ergGewinn":"ergVerlust"}">${b.ergebnis>=0?"+":""}${euro(b.ergebnis)}</div><div class="label">Erwartetes Saisonergebnis</div></div>
-      <div class="karte"><div class="wert" style="font-size:19px">${euro(b.worst)} / ${euro(b.best)}</div><div class="label">Spanne: alle −10 / +10 Punkte Auslastung</div></div>
+      <div class="karte"><div class="wert">${euro(kb.gesamt)}</div><div class="label">Gagen und Nebenkosten aller ${kb.anzahlAktiv} nicht abgesagten Produktionen</div></div>
+      <div class="karte"><div class="wert">${euro(kb.budgetwirksam)}</div><div class="label">davon budgetwirksam – dieselbe Zahl wie im Reiter Übersicht</div></div>
+      <div class="karte" style="${kb.summeNeutral>0?"border-color:#9dbcf0;background:#f4f7fd;":""}"><div class="wert" style="${kb.summeNeutral>0?"color:#14448f":""}">${euro(kb.summeNeutral)}</div><div class="label">davon budgetneutral gestellt · ${kb.anzahlNeutral} Produktion(en)</div></div>
+      <div class="karte"><div class="wert">${b.kalkulierbar} / ${b.anzahl}</div><div class="label">Produktionen mit vollständig hinterlegten Ticketpreisen</div></div>
     </div>
-    <div class="warnbox">Diese Rechnung vergleicht nur Ticketerlöse mit Gagen und Nebenkosten – Hauskosten (Personal, Technik, Energie) und Marketing sind nicht enthalten. ${b.ungeklaert>0?`<b>${b.ungeklaert} Produktion(en) stehen ohne Gage in der Bilanz</b> – das tatsächliche Risiko liegt um schätzungsweise 25.000–35.000 € höher.`:""} Ein moderates Saison-Defizit ist bei diesem Auftrag kein Versagen: Fitzek und Neujahrskonzert finanzieren die Imagetreiber quer – das ist die Währung „Aufmerksamkeit", von der du sprichst, nur ehrlich beziffert.</div>
-    <h3>Hebel zur Ergebnisverbesserung bei Verlust-Produktionen</h3>
-    <div class="hinweis"><b>1. Fitzek vertraglich sichern:</b> Der Abend trägt die halbe Saisonbilanz und ist der einzige Novembertermin, steht aber nur auf optioniert – das ist das größte offene Risiko im Plan. <b>2. Zweitvorstellungen:</b> Wo die Anreise bezahlt ist, kostet die zweite Vorstellung fast nichts. Der Pumuckl-Termin gehört verdoppelt, rund 3.000 bis 4.000 Euro Zusatzerlös; bei Rico und Oskar dasselbe prüfen. <b>3. Termine umverteilen statt zukaufen:</b> Der Oktober trägt fünf Termine, der November einen. Zwei Positionen aus dem Oktober in den November zu schieben kostet nichts außer Verhandlung und repariert beide Monate. <b>4. Gagenmodell wandeln:</b> Bei teuren Positionen Festgage in Sockel plus Einnahmenbeteiligung umverhandeln – das verlagert Risiko zum Partner, der an seine Zugkraft glaubt. <b>5. Förderung und Sponsoring:</b> Junge Formate wie Brodas sind förderfähig – Landesprogramme, Kulturstiftungen, lokale Banken und Industrie als Format-Paten, realistisch 5.000 bis 10.000 Euro pro Saison. <b>6. Nebenkosten drücken:</b> Übernachtung und Catering über lokale Partner gegen Sichtbarkeit, bei den großen Pauschalen sind 10 bis 20 Prozent drin. <b>7. B2B und Gruppen:</b> Firmenkontingente an die Singener Industrie, Schulen für Der Sohn, Vereine und Tanzschulen für Brodas, Buchhandel und Bibliothek für die Kinderstoffe. <b>8. Raummodularität:</b> Lieber klein einrichten und ausverkauft melden als groß und halb leer – ausverkauft ist Marketing für die Folgesaison. <b>9. Kammerkonzerte ehrlich führen:</b> Zuschuss ist Kulturauftrag, Ziel ist Deckelung bei etwa 3.500 Euro je Konzert, nicht die Break-even-Illusion.</div>
-    ${KANDIDATEN.length===0?"":`<h3>Geprüfte Kandidaten – analysiert, noch nicht in der Planung</h3>`}
-    ${KANDIDATEN.map(k=>`<div class="akarte">
-      <div class="akopf"><span class="score prio${k.prio}">${k.score}</span>
-      <div><b style="font-size:16px">${k.titel}</b><div class="fussnote">Kandidat · Priorität ${k.prio}</div></div>
-      <span style="flex:1"></span><span class="rolle">${k.rolle}</span></div>
-      <div class="atext">${k.text}</div></div>`).join("")}
+    ${kostenAusweisHTML(kb)}
+    ${b.erloes===null
+      ? `<div class="warnbox"><b>Ein Saisonergebnis wird bewusst nicht ausgewiesen.</b> ${b.offen>0?`Für ${b.offen} von ${b.anzahl} Produktionen fehlen Ticketpreise je Kategorie`:`Für ${b.anzahl-b.mitErloes} Produktion(en) ist kein geplanter Verkauf hinterlegt`}. Erlöse, Durchschnittspreise und Ergebnisse entstehen ausschließlich aus eingetragenen Preisen und Platzzahlen – solange die fehlen, wäre jede Gesamtzahl eine Erfindung. Die Kostenseite oben ist dagegen belastbar, sie stammt Position für Position aus den Veranstaltungsdaten.</div>`
+      : `<div class="karten">
+          <div class="karte"><div class="wert">${euro(b.erloes)}</div><div class="label">Nettoerlöse nach geplantem Verkauf</div></div>
+          <div class="karte" style="${b.ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${b.ergebnis>=0?"ergGewinn":"ergVerlust"}">${b.ergebnis>=0?"+":""}${euro(b.ergebnis)}</div><div class="label">Saisonergebnis vor Hauskosten</div></div>
+        </div>
+        <div class="warnbox">Diese Rechnung stellt Nettoerlöse aus Tickets den Gagen und Nebenkosten gegenüber. Hauskosten wie Personal, Technik, Energie, Marketing und Aufbau sind nicht enthalten – sie werden im Reiter Kalkulation als Deckungsbedarf der Saison gegengerechnet.</div>`}
+    ${b.unerreichbar>0?`<div class="rotbox">${b.unerreichbar} Produktion(en) erreichen den Break-even innerhalb der verfügbaren Kapazität nicht – selbst ein ausverkauftes Haus deckt dort die Kosten nicht. Details im Reiter Kalkulation.</div>`:""}
+
+    <h3>Hebel zur Ergebnisverbesserung</h3>
+    <div class="hinweis"><b>1. Die drei großen Abende gemeinsam führen:</b> Eine Klammer über Ofczarek, Sawatzki/Berkel und Eidinger, ein Kombiticket, eine Kampagne – drei Abende, die einander tragen, verkaufen sich besser als drei einzelne Gastspiele. <b>2. Fitzek vertraglich sichern:</b> Der Abend steht nur auf optioniert und ist zugleich der einzige Novembertermin. <b>3. Zweitvorstellungen:</b> Wo die Anreise bezahlt ist, kostet die zweite Vorstellung fast nichts – der Pumuckl-Termin gehört verdoppelt, bei Rico und Oskar dasselbe prüfen. <b>4. Termine umverteilen statt zukaufen:</b> Der Oktober trägt fünf Termine, der November einen; zwei Positionen zu verschieben kostet nichts außer Verhandlung. <b>5. Gagenmodell wandeln:</b> Bei teuren Positionen Festgage in Sockel plus Einnahmenbeteiligung umverhandeln. <b>6. Förderung und Sponsoring:</b> Junge und zeitgenössische Formate sind förderfähig – Landesprogramme, Kulturstiftungen, lokale Unternehmen als Format-Paten. <b>7. Nebenkosten drücken:</b> Übernachtung und Catering über lokale Partner gegen Sichtbarkeit. <b>8. B2B und Gruppen:</b> Firmenkontingente an die Singener Industrie, Schulen für Der Sohn, Vereine und Tanzschulen für Brodas, Buchhandel und Bibliothek für die Kinderstoffe. <b>9. Raummodularität:</b> Lieber klein einrichten und ausverkauft melden als groß und halb leer. <b>10. Kammerkonzerte ehrlich führen:</b> Zuschuss ist Kulturauftrag, das Ziel ist eine gedeckelte Zuschusshöhe, keine Break-even-Illusion.</div>
     ${plausiHTML()}
     ${saisonverlaufHTML()}
-    <h3>Alle Produktionen (${liste.length}) – Score, Rolle, Preise, Wirtschaftlichkeit</h3>
-    <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Alle Annahmen (Plätze, Auslastung, Preise, Erlösfaktor) sind direkt editierbar – die Bilanz oben rechnet sofort mit. Der Erlösfaktor bildet ab, dass Abos und Ermäßigungen den Kassenpreis verwässern (kalibriert an euren 25/26-Istwerten).</p>
+    <h3>Alle Produktionen (${liste.length}) – Einschätzung und Rechenstand</h3>
+    <p class="fussnote">Rollen: ${Object.entries(ROLLEN_INFO).map(([k,v])=>`<b>${k}</b> = ${v}`).join(" · ")}. Die Kostenzahl jeder Karte ist die Summe der Einzelpositionen dieser Veranstaltung, nicht eine eigene Schätzung. Erlöse, Durchschnittserlös und Break-even erscheinen erst, wenn im Reiter Kalkulation für jede genutzte Preiskategorie Plätze und Preis eingetragen sind.</p>
     ${karten}`;
 }
 
@@ -1229,103 +1356,147 @@ function zeigeMarkt(){
     <div class="hinweis"><b>1.</b> Kindertheater ist euer nachweislich stärkstes Genre – ausbauen (Zweitvorstellungen, Schulnetz), nicht nur pflegen. <b>2.</b> Schauspiel trägt sich nur mit Marke oder Star – jede Schauspiel-Position ohne beides ist ein kalkulierter Zuschuss. <b>3.</b> Die Klassik-Nische nicht intern verdoppeln: zwei Nischenformate am selben Abend (18.03.) kannibalisieren sich gegenseitig. <b>4.</b> Tuttlingen, Radolfzell und Schaffhausen sind die realen Wettbewerber um dasselbe Gastspiel-Publikum – Exklusivfenster bei Agenturen gehören deshalb in jede Verhandlung. <b>5.</b> Die Schweiz ist keine Selbstverständlichkeit, sondern ein Premium-Kanal, der nur bei Star-Anlässen aktiviert werden kann – dann aber mit überdurchschnittlichen Preisen. <b>6.</b> Das größte ungenutzte Potenzial sind Berufstätige 30–55: erlebnisorientiert, kaufkräftig, nur über Social und Formate erreichbar – nicht über das Abo-System.</div>`;
 }
 
-/* ================= v4: DB1-KALKULATION JE PRODUKTION =================
-   Hausregel Stadthalle Singen: In den DB1 gehen ausschließlich produktionsspezifische
-   Fremdkosten (Gage/Beteiligung, Tantiemen, Transfer, Übernachtung, Catering, GEMA,
-   Sozialkasse, Sonderabgaben). Marketing, Aufbau/erweiterte Bestuhlung sowie Licht & Ton
-   sind NICHT enthalten – sie laufen über Haushalt und Hausinfrastruktur und werden auf
-   Saisonebene in einer Summe als Deckungsbedarf gegengerechnet.
-   Erlösseite: Bruttopreise (Kartenmix) → abzüglich USt und VVK-/Systemgebühr = Nettoerlös Haus. */
-function db1(v){
-  const a = analyseVon(v);
-  const brutto = a.preise.reduce((s,p,i)=>s+(+p||0)*KAT_MIX[i],0);
-  const effBrutto = brutto * (+a.faktor||0.75);
-  const tickets = Math.round((+a.plaetze||0) * (+a.auslastung||0) / 100);
-  const umsatzBrutto = Math.round(tickets * effBrutto);
-  const ustSatz = +daten.kalk.ust||0, vvkSatz = +daten.kalk.vvk||0;
-  const ust = Math.round(umsatzBrutto * ustSatz/(100+ustSatz));
-  const vvk = Math.round(umsatzBrutto * vvkSatz/100);
-  const netto = umsatzBrutto - ust - vvk;
-  const kosten = gesamt(v);
-  const proTicket = effBrutto * (1 - ustSatz/(100+ustSatz) - vvkSatz/100);
-  const beTickets = proTicket>0 ? Math.ceil(kosten/proTicket) : null;
-  const bePro = (beTickets!==null && (+a.plaetze||0)>0) ? Math.round(beTickets/(+a.plaetze)*100) : null;
-  return {brutto, effBrutto, tickets, umsatzBrutto, ust, vvk, netto, kosten, db1: netto-kosten, proTicket, beTickets, bePro};
-}
+/* ================= v8: KALKULATIONSREITER =================
+   Alle Zahlen dieses Reiters stammen aus zwei Quellen: kostenBasis() für die Kosten,
+   die eingetragenen Preiskategorien für die Erlöse. Es gibt keine zweite Rechnung
+   und keinen manuell gesetzten Gesamtwert. */
 function kalkParam(feld, wert){
-  const z = Math.max(0, +String(wert).replace(",",".")||0);
-  daten.kalk[feld] = z; speichern(); zeigeKalkulation();
-}
-function kalkAendern(vid, feld, wert){
-  const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
-  const a = analyseVon(v);
-  a[feld] = Math.max(0, +wert||0);
+  daten.kalk[feld] = Math.max(0, +String(wert).replace(",",".")||0);
   speichern(); zeigeKalkulation();
 }
+function kalkBasisSetzen(wert){
+  daten.kalk.kostenbasis = (wert==="brutto") ? "brutto" : "netto";
+  speichern(); zeigeKalkulation();
+}
+function kostenAusweisHTML(kb){
+  const basisText = daten.kalk.kostenbasis==="brutto"
+    ? "Die eingetragenen Beträge sind <b>Bruttobeträge (inklusive Umsatzsteuer)</b>."
+    : "Die eingetragenen Beträge sind <b>Nettobeträge (ohne Umsatzsteuer)</b>.";
+  return `<details style="margin:12px 0;background:#fff;border:1px solid var(--rand);border-radius:10px;padding:10px 14px;">
+    <summary style="cursor:pointer;font-weight:600;">Woraus sich die ${euro(kb.gesamt)} zusammensetzen</summary>
+    <p class="fussnote" style="margin-top:8px;">In die Gesamtkosten fließt je Veranstaltung die Gage plus sämtliche erfassten Nebenkosten ein.
+      Berücksichtigt werden alle Produktionen, deren Status nicht „abgesagt" lautet – budgetneutral gestellte eingeschlossen, weil ihre Kosten real anfallen und nur aus anderen Mitteln gedeckt sind.
+      ${basisText} Diese Angabe beschreibt die Eintragungen, sie rechnet nichts um.</p>
+    <table class="kalkTab"><tr><th>Position</th><th class="zahl">Summe</th></tr>
+      <tr><td>Gage</td><td class="zahl">${euro(kb.nachArt.gage)}</td></tr>
+      ${NK_ARTEN.map(([k,l])=>`<tr><td>${l}</td><td class="zahl">${euro(kb.nachArt[k])}</td></tr>`).join("")}
+      ${kb.nachArt.nkAlt>0?`<tr><td>Pauschale, noch nicht aufgeschlüsselt</td><td class="zahl">${euro(kb.nachArt.nkAlt)}</td></tr>`:""}
+      <tr class="summe"><td>Gesamt, ${kb.anzahlAktiv} Produktionen ohne „abgesagt"</td><td class="zahl">${euro(kb.gesamt)}</td></tr>
+      <tr><td>davon budgetwirksam</td><td class="zahl">${euro(kb.budgetwirksam)}</td></tr>
+      <tr><td>davon budgetneutral gestellt (${kb.anzahlNeutral})</td><td class="zahl">${euro(kb.summeNeutral)}</td></tr>
+      ${kb.anzahlAbgesagt>0?`<tr><td>nachrichtlich: abgesagt (${kb.anzahlAbgesagt}), nicht enthalten</td><td class="zahl">${euro(kb.summeAbgesagt)}</td></tr>`:""}
+    </table>
+    <p class="fussnote">Dieselbe Rechnung liefert die Zahlen im Reiter Übersicht und in der strategischen Analyse. Eine abweichende Gesamtsumme kann es nicht mehr geben.</p>
+  </details>`;
+}
+function katTabelleHTML(v){
+  const a = analyseVon(v), r = rechnung(v);
+  const zeilen = a.kat.map((k,i)=>`<tr>
+    <td>${k.name}</td>
+    <td class="zahl"><input type="number" min="0" step="10" style="width:90px" value="${k.plaetze}" onchange="katAendern(${v.vid},${i},'plaetze',this.value)"></td>
+    <td class="zahl"><input type="number" min="0" step="1" style="width:90px" value="${k.preis}" onchange="katAendern(${v.vid},${i},'preis',this.value)"> €</td>
+    <td class="zahl"><input type="number" min="0" max="100" step="1" style="width:70px" value="${k.minderung}" onchange="katAendern(${v.vid},${i},'minderung',this.value)"> %</td>
+    <td class="zahl">${k.plaetze>0&&k.preis>0?euro(k.plaetze*k.preis):"–"}</td>
+    <td class="zahl">${k.plaetze>0&&k.preis>0?(k.preis*(1-k.minderung/100)*nettoFaktor()).toFixed(2).replace(".",",")+" €":"–"}</td>
+  </tr>`).join("");
+  const rechenweg = r.vollstaendig ? `
+    <table class="kalkTab" style="margin-top:10px;">
+      <tr><th>Rechenweg</th><th class="zahl">Wert</th></tr>
+      <tr><td>Berücksichtigte Gesamtkosten (Gage + Nebenkosten dieser Produktion)</td><td class="zahl">${euro(r.kosten)}</td></tr>
+      <tr><td>Verkaufbare Plätze (Summe der Kategorien)</td><td class="zahl">${r.kapazitaet}</td></tr>
+      ${r.gesperrt>0?`<tr><td>zusätzlich gesperrt bzw. nicht verkaufbar</td><td class="zahl">${r.gesperrt}</td></tr>`:""}
+      <tr><td>Maximaler Bruttoumsatz bei vollem Haus</td><td class="zahl">${euro(r.maxBrutto)}</td></tr>
+      <tr><td>Maximaler Nettoerlös nach ${daten.kalk.ust} % USt und ${daten.kalk.vvk} % Gebühr</td><td class="zahl">${euro(r.maxNetto)}</td></tr>
+      <tr class="summe"><td>Gewichteter Ø Nettoerlös je verkauftem Ticket</td><td class="zahl">${r.gewichtetNetto.toFixed(2).replace(".",",")} €</td></tr>
+      <tr><td>Notwendige verkaufte Plätze bis Break-even</td><td class="zahl">${r.beTickets}</td></tr>
+      <tr><td>Daraus folgende Auslastung</td><td class="zahl">${r.beProzent.toFixed(1).replace(".",",")} %</td></tr>
+    </table>
+    <p class="fussnote">Angenommene Verkaufsverteilung im Break-even, proportional zu den Platzanteilen der Kategorien:
+      ${r.beVerteilung.map((n,i)=>`${r.zeilen[i]?r.zeilen[i].name:"?"}: ${Math.round(n)}`).join(" · ")}.
+      Der gewichtete Durchschnitt entsteht ausschließlich aus den hinterlegten Preisen und Platzanzahlen – er wird weder aus den Kosten noch aus einer Auslastungsannahme abgeleitet.</p>
+    ${r.erreichbar?"":'<div class="rotbox">Break-even innerhalb der verfügbaren Kapazität nicht erreichbar.</div>'}
+    <div class="parambox" style="margin-top:10px;">
+      <div class="feld"><label>Geplanter Verkauf (Plätze)</label>
+        <input type="number" min="0" style="width:110px" value="${r.verkauft===null?"":Math.round(r.verkauft)}" placeholder="leer = offen" onchange="kalkFeldAendern(${v.vid},'verkauft',this.value)"></div>
+      <div class="feld"><label>Gesperrte Plätze (informativ)</label>
+        <input type="number" min="0" style="width:110px" value="${r.gesperrt}" onchange="kalkFeldAendern(${v.vid},'gesperrt',this.value)"></div>
+      <div class="fussnote" style="flex:1;min-width:220px;">${r.verkauft===null
+        ? "Solange hier nichts steht, weist das Tool für diese Produktion keinen Erlös und kein Ergebnis aus. Die Auslastung wird nicht mehr geschätzt, sondern aus verkauften Plätzen und Kapazität berechnet."
+        : `Auslastung ${r.auslastung.toFixed(1).replace(".",",")} % · Nettoerlös ${euro(r.erloes)} · Ergebnis <b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b><br>Verteilung: ${r.verteilung.map((n,i)=>`${r.zeilen[i].name}: ${Math.round(n)}`).join(" · ")}`}</div>
+    </div>`
+    : `<div class="warnbox"><b>${r.grund==="Ticketpreise noch nicht vollständig hinterlegt"?"Ticketpreise noch nicht vollständig hinterlegt":"Nicht berechenbar"}</b> – ${r.grund}${r.fehlend.length?": "+r.fehlend.join(", "):""}. Bis dahin werden für diese Produktion weder Erlöse noch Durchschnittspreise, Break-even-Werte noch Ergebnisse ausgewiesen.</div>`;
+  return `<table class="kalkTab">
+      <tr><th>Preiskategorie</th><th class="zahl">verkaufbare Plätze</th><th class="zahl">Preis brutto</th><th class="zahl">Erlösminderung</th><th class="zahl">Bruttoumsatz max.</th><th class="zahl">netto je Ticket</th></tr>
+      ${zeilen}
+    </table>${rechenweg}`;
+}
 function zeigeKalkulation(){
+  const kb = kostenBasis();
   const liste = sortiert().filter(zaehltBudget);
-  let sNetto=0, sKosten=0, sDb1=0, sTickets=0, sUst=0, sVvk=0, sBrutto=0;
+  const b = saisonBilanz();
+  const deckung = +daten.kalk.deckungsbedarf||0;
   const zeilen = liste.map(v=>{
-    const k = db1(v), a = analyseVon(v);
-    sNetto+=k.netto; sKosten+=k.kosten; sDb1+=k.db1; sTickets+=k.tickets; sUst+=k.ust; sVvk+=k.vvk; sBrutto+=k.umsatzBrutto;
-    const beKlasse = k.bePro===null ? "" : (k.bePro>100 ? "ergVerlust" : (k.bePro>(+a.auslastung||0) ? "plus" : "minus"));
-    return `<tr class="klickbar" onclick="vaDialogOeffnen(${v.vid})">
+    const r = rechnung(v);
+    return `<tr>
       <td>${datumDE(v.datum)}<div class="fussnote">${wochentag(v.datum)}</div></td>
       <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}
-        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
-        <span class="pille ${statusKlasse(v.status)}" style="font-size:11px">${statusText(v.status)}</span></div></td>
-      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:74px" value="${a.plaetze}" onchange="kalkAendern(${v.vid},'plaetze',this.value)"></td>
-      <td class="zahl" onclick="event.stopPropagation()"><input type="number" style="width:62px" value="${a.auslastung}" onchange="kalkAendern(${v.vid},'auslastung',this.value)"> %</td>
-      <td class="zahl">${k.tickets}</td>
-      <td class="zahl">${k.proTicket.toFixed(2).replace(".",",")} €</td>
-      <td class="zahl">${euro(k.netto)}</td>
-      <td class="zahl">${euro(k.kosten)}</td>
-      <td class="zahl"><b class="${k.db1>=0?"ergGewinn":"ergVerlust"}">${k.db1>=0?"+":""}${euro(k.db1)}</b></td>
-      <td class="zahl ${beKlasse}">${k.bePro===null?"–":k.bePro+" %"}${k.beTickets!==null?`<div class="fussnote">${k.beTickets} Tickets</div>`:""}</td>
+        <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></div></td>
+      <td class="zahl">${euro(r.kosten)}</td>
+      <td class="zahl">${r.kapazitaet>0?r.kapazitaet:'<span class="fussnote">offen</span>'}</td>
+      <td class="zahl">${r.vollstaendig?r.gewichtetNetto.toFixed(2).replace(".",",")+" €":'<span class="fussnote">nicht berechenbar</span>'}</td>
+      <td class="zahl">${r.vollstaendig?r.beTickets:"–"}</td>
+      <td class="zahl ${r.vollstaendig&&!r.erreichbar?"ergVerlust":""}">${r.vollstaendig?r.beProzent.toFixed(1).replace(".",",")+" %":"–"}</td>
+      <td class="zahl">${r.vollstaendig&&r.verkauft!==null?Math.round(r.verkauft)+" · "+r.auslastung.toFixed(0)+" %":"–"}</td>
+      <td class="zahl">${r.vollstaendig&&r.ergebnis!==null?`<b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b>`:"–"}</td>
     </tr>`;
   }).join("");
-  const deckung = +daten.kalk.deckungsbedarf||0;
-  const ergebnis = sDb1 - deckung;
+  const details = liste.map(v=>`<details style="margin:8px 0;background:#fff;border:1px solid var(--rand);border-radius:10px;padding:10px 14px;">
+      <summary style="cursor:pointer;font-weight:600;">${datumDE(v.datum)} · ${v.titel} <span class="fussnote">– Preiskategorien und Rechenweg</span></summary>
+      <div style="margin-top:10px;">${katTabelleHTML(v)}</div>
+    </details>`).join("");
   document.getElementById("inhalt").innerHTML = `
-    <h2>Kalkulation ${daten.saisonAktuell} – Deckungsbeitrag 1 je Produktion</h2>
-    <div class="hinweis"><b>Was hier gerechnet wird:</b> Vom erwarteten Ticketumsatz gehen Umsatzsteuer und VVK-/Systemgebühr ab –
-      übrig bleibt der Nettoerlös, den das Haus tatsächlich behält. Davon abgezogen werden ausschließlich die
-      <b>produktionsspezifischen Fremdkosten</b> (Gage plus alle erfassten Nebenkosten). Das ergibt den DB1.
-      Nach eurer Hausregel enthält der DB1 <b>kein Marketing, keinen Aufbau bzw. keine erweiterte Bestuhlung und kein Licht &amp; Ton</b> –
-      diese Kosten sind nicht produktionsspezifisch zurechenbar und werden unten in einer Summe als Deckungsbedarf gegengerechnet.</div>
+    <h2>Kalkulation ${daten.saisonAktuell}</h2>
+    <div class="hinweis"><b>So rechnet dieser Reiter:</b> Die Kostenseite ist die Summe der Einzelpositionen jeder Veranstaltung, Gage plus sämtliche erfassten Nebenkosten – dieselbe Rechnung, die auch der Reiter Übersicht und die strategische Analyse verwenden. Die Erlösseite entsteht ausschließlich aus den Preiskategorien, die ihr je Produktion eintragt: Plätze, Bruttopreis und gegebenenfalls eine Erlösminderung. Vom Bruttopreis gehen Umsatzsteuer und VVK-Gebühr ab, der Rest ist der Nettoerlös des Hauses. Fehlt für eine Kategorie mit Plätzen der Preis, weist das Tool für diese Produktion nichts aus – keine Erlöse, keinen Durchschnittspreis, keinen Break-even. Geschätzt wird nichts.</div>
     <div class="parambox">
       <div class="feld"><label>Umsatzsteuer auf Tickets</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.ust}" onchange="kalkParam('ust',this.value)"> %</div>
       <div class="feld"><label>VVK-/Systemgebühr vom Bruttopreis</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.vvk}" onchange="kalkParam('vvk',this.value)"> %</div>
-      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" value="${deckung}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
-      <div class="fussnote" style="flex:1;min-width:220px;">Beide Sätze in Prozent. Hausvorgabe: 7&nbsp;% USt, 10&nbsp;% VVK-/Systemgebühr.
-        Der Deckungsbedarf ist die Summe aus Marketing, Aufbau/Bestuhlung und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
+      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" style="width:120px" value="${deckung}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
+      <div class="feld"><label>Gagen und Nebenkosten sind eingetragen als</label>
+        <select onchange="kalkBasisSetzen(this.value)">
+          <option value="netto" ${daten.kalk.kostenbasis!=="brutto"?"selected":""}>Nettobeträge (ohne USt)</option>
+          <option value="brutto" ${daten.kalk.kostenbasis==="brutto"?"selected":""}>Bruttobeträge (mit USt)</option>
+        </select></div>
+      <div class="fussnote" style="flex:1;min-width:220px;">Hausvorgabe: 7 % USt, 10 % VVK-/Systemgebühr. Der Deckungsbedarf ist die Summe aus Marketing, Aufbau und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
     </div>
     <div class="karten">
-      <div class="karte"><div class="wert">${euro(sNetto)}</div><div class="label">Nettoerlös Tickets · brutto ${euro(sBrutto)}, davon ${euro(sUst)} USt und ${euro(sVvk)} Gebühr</div></div>
-      <div class="karte"><div class="wert">${euro(sKosten)}</div><div class="label">Produktionsspezifische Fremdkosten (Gage + Nebenkosten)</div></div>
-      <div class="karte" style="${sDb1<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${sDb1>=0?"ergGewinn":"ergVerlust"}">${sDb1>=0?"+":""}${euro(sDb1)}</div><div class="label">Summe DB1 aller Produktionen</div></div>
-      <div class="karte" style="${ergebnis<0?"border-color:var(--rot);background:var(--rot-hell)":""}"><div class="wert ${ergebnis>=0?"ergGewinn":"ergVerlust"}">${ergebnis>=0?"+":""}${euro(ergebnis)}</div><div class="label">Nach Abzug Deckungsbedarf (${euro(deckung)})</div></div>
+      <div class="karte"><div class="wert">${euro(kb.gesamt)}</div><div class="label">Gagen und Nebenkosten, ${kb.anzahlAktiv} Produktionen ohne „abgesagt"</div></div>
+      <div class="karte"><div class="wert">${euro(kb.budgetwirksam)}</div><div class="label">davon budgetwirksam – identisch mit dem Wert im Reiter Übersicht</div></div>
+      <div class="karte"><div class="wert">${b.kalkulierbar} / ${b.anzahl}</div><div class="label">Produktionen mit vollständigen Ticketpreisen</div></div>
+      <div class="karte"><div class="wert">${b.erloes===null?"nicht berechenbar":euro(b.erloes)}</div><div class="label">Nettoerlöse ${b.erloes===null?"– es fehlen Preise oder Verkaufsplanungen":"nach geplantem Verkauf"}</div></div>
     </div>
-    ${deckung===0?'<div class="warnbox">Der <b>Deckungsbedarf steht auf 0</b>. Solange dort nichts eingetragen ist, zeigt die Summe nur die Produktionsebene – Marketing, Aufbau und Licht &amp; Ton fehlen komplett in der Rechnung. Trag den Saisonwert oben ein, dann stimmt das Gesamtbild.</div>':""}
+    ${kostenAusweisHTML(kb)}
+    ${b.offen>0?`<div class="warnbox">Für <b>${b.offen} von ${b.anzahl} Produktionen</b> sind die Ticketpreise noch nicht vollständig hinterlegt. Solange das so ist, gibt es kein Saisonergebnis und keine Deckungsbedarfsrechnung – beides erschiene sonst als belastbare Zahl, obwohl es geraten wäre.</div>`:""}
+    ${b.unerreichbar>0?`<div class="rotbox">${b.unerreichbar} Produktion(en): Break-even innerhalb der verfügbaren Kapazität nicht erreichbar.</div>`:""}
+    ${b.erloes!==null?`<table class="kalkTab" style="margin-bottom:14px;">
+      <tr><th>Saisonrechnung</th><th class="zahl">Wert</th></tr>
+      <tr><td>Nettoerlöse aus geplanten Verkäufen</td><td class="zahl">${euro(b.erloes)}</td></tr>
+      <tr><td>./. Gagen und Nebenkosten</td><td class="zahl">− ${euro(kb.gesamt)}</td></tr>
+      <tr class="summe"><td>Deckungsbeitrag der Produktionen</td><td class="zahl">${b.ergebnis>=0?"+":""}${euro(b.ergebnis)}</td></tr>
+      <tr><td>./. Deckungsbedarf Saison (Marketing, Aufbau, Licht &amp; Ton)</td><td class="zahl">− ${euro(deckung)}</td></tr>
+      <tr class="ergebnis"><td>Ergebnis nach Deckungsbedarf</td><td class="zahl">${(b.ergebnis-deckung)>=0?"+":""}${euro(b.ergebnis-deckung)}</td></tr>
+    </table>`:""}
+    <h3>Alle Produktionen</h3>
     <table class="kalkTab">
-      <tr><th>Datum</th><th>Produktion</th><th class="zahl">Plätze</th><th class="zahl">Auslastung</th><th class="zahl">Tickets</th>
-        <th class="zahl">Ø netto/Ticket</th><th class="zahl">Nettoerlös</th><th class="zahl">Fremdkosten</th><th class="zahl">DB1</th><th class="zahl">Break-even</th></tr>
+      <tr><th>Datum</th><th>Produktion</th><th class="zahl">Gage + NK</th><th class="zahl">Plätze</th><th class="zahl">Ø netto/Ticket</th>
+        <th class="zahl">Break-even Plätze</th><th class="zahl">Break-even %</th><th class="zahl">geplanter Verkauf</th><th class="zahl">Ergebnis</th></tr>
       ${zeilen}
-      <tr class="summe"><td colspan="4">Summe ${liste.length} Produktionen</td>
-        <td class="zahl">${sTickets}</td><td class="zahl">–</td><td class="zahl">${euro(sNetto)}</td>
-        <td class="zahl">${euro(sKosten)}</td><td class="zahl">${sDb1>=0?"+":""}${euro(sDb1)}</td><td class="zahl">–</td></tr>
-      <tr class="summe"><td colspan="8">./. Deckungsbedarf Saison (Marketing, Aufbau/Bestuhlung, Licht &amp; Ton)</td>
-        <td class="zahl">− ${euro(deckung)}</td><td class="zahl">–</td></tr>
-      <tr class="ergebnis"><td colspan="8">Ergebnis Saison ${daten.saisonAktuell} nach Deckungsbedarf</td>
-        <td class="zahl">${ergebnis>=0?"+":""}${euro(ergebnis)}</td><td class="zahl">–</td></tr>
+      <tr class="summe"><td colspan="2">Summe ${liste.length} Produktionen</td><td class="zahl">${euro(kb.gesamt)}</td>
+        <td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td>
+        <td class="zahl">${b.ergebnis===null?"nicht berechenbar":((b.ergebnis>=0?"+":"")+euro(b.ergebnis))}</td></tr>
     </table>
-    <p class="fussnote">Plätze und Auslastung sind hier direkt änderbar – es sind dieselben Werte wie im Reiter <b>Analyse</b>, eine Änderung wirkt in beiden Ansichten.
-      Preise, Kartenmix und Erlösfaktor werden in der Analyse gepflegt. Break-even = Auslastung, ab der der DB1 auf null steht.
-      Grün eingefärbte Break-even-Werte liegen unter der angenommenen Auslastung, rote darüber.</p>
-    <div class="warnbox"><b>Eine Einschränkung, die du kennen musst:</b> Der Erlösfaktor stammt aus der Analyse und ist an den
-      tatsächlichen Erlösen je Besucher aus 25/26 kalibriert. Falls diese Istwerte bereits Nettowerte waren, zieht diese Rechnung
-      USt und Gebühr ein zweites Mal ab und rechnet die Saison zu schlecht. Prüf das einmal an einer abgerechneten Produktion gegen –
-      falls es so ist, setzt du die beiden Sätze oben einfach auf 0 und arbeitest weiter mit dem Erlösfaktor allein.</div>`;
+    <h3 style="margin-top:20px;">Preiskategorien je Produktion</h3>
+    <p class="fussnote">Je Kategorie die verkaufbaren Plätze und den regulären Bruttopreis eintragen, bei Bedarf eine Erlösminderung in Prozent für Ermäßigungen. Daraus berechnet das Tool maximalen Bruttoumsatz, Nettoerlös, gewichteten Durchschnittserlös, Break-even in Plätzen und Break-even-Auslastung. Die Verkaufsverteilung folgt den Platzanteilen der Kategorien; ist eine Kategorie ausgeschöpft, wandert der Rest auf die übrigen.</p>
+    ${details}`;
 }
 
 /* ================= v4: PLAUSIBILITÄT & SAISONVERLAUF (Ergänzung der Analyse) ================= */
@@ -1336,27 +1507,42 @@ function istWertFuer(v){
 }
 function plausiHTML(){
   const liste = sortiert().filter(zaehltBudget);
-  const zeilen = liste.map(v=>{
-    const a = analyseVon(v), ist = istWertFuer(v);
-    if(ist===null) return null;
-    const d = (+a.auslastung||0) - ist;
+  const zeilen = [];
+  let ohneRechnung = 0, ohnePlan = 0;
+  liste.forEach(v=>{
+    const ist = istWertFuer(v);
+    const r = rechnung(v);
+    if(!r.vollstaendig){ ohneRechnung++; return; }
+    if(r.auslastung===null){ ohnePlan++; return; }
+    if(ist===null) return;
+    const d = Math.round(r.auslastung - ist);
     const stufe = d<=0 ? "Gruen" : (d<=10 ? "Gelb" : "Rot");
     const text = d<=0 ? "liegt auf oder unter dem Genre-Ist – belastbar"
       : (d<=10 ? "liegt "+d+" Punkte über dem Genre-Ist – vertretbar, wenn ein Grund dafür benannt ist (Marke, Star, Kooperation)"
-               : "liegt "+d+" Punkte über dem Genre-Ist – das trägt nur mit belegbarem Zugpferd: bundesweite Marke, Star, Ausverkaufshistorie. Ohne das ist es eine Wette");
-    return {d, html:`<tr><td><span class="ampel ampel${stufe}"></span><b>${v.titel}</b>
+               : "liegt "+d+" Punkte über dem Genre-Ist – das trägt nur mit belegbarem Zugpferd. Ohne das ist es eine Wette");
+    zeilen.push({d, html:`<tr><td><span class="ampel ampel${stufe}"></span><b>${v.titel}</b>
         <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span> ${datumDE(v.datum)}</div></td>
-      <td class="zahl">${a.auslastung} %</td><td class="zahl">${ist} %${GENRE_IST_NAEHERUNG.indexOf(v.sparte)>-1?'<div class="fussnote">Näherung, kein Hausist</div>':""}</td>
+      <td class="zahl">${r.auslastung.toFixed(1).replace(".",",")} %<div class="fussnote">${Math.round(r.verkauft)} von ${r.kapazitaet}</div></td>
+      <td class="zahl">${ist} %${GENRE_IST_NAEHERUNG.indexOf(v.sparte)>-1?'<div class="fussnote">Näherung, kein Hausist</div>':""}</td>
       <td class="zahl ${d>10?"plus":(d<=0?"minus":"")}">${d>0?"+":""}${d}</td>
-      <td>${text}</td></tr>`};
-  }).filter(Boolean).sort((x,y)=>y.d-x.d);
+      <td class="zahl ${r.beProzent>ist?"plus":"minus"}">${r.beProzent.toFixed(1).replace(".",",")} %</td>
+      <td>${text}</td></tr>`});
+  });
+  zeilen.sort((x,y)=>y.d-x.d);
   const rot = zeilen.filter(z=>z.d>10).length, gelb = zeilen.filter(z=>z.d>0&&z.d<=10).length;
-  return `<h3>Plausibilitätsprüfung der Auslastungsannahmen</h3>
-    <div class="${rot>0?"warnbox":"hinweis"}">Jede angenommene Auslastung wird gegen den <b>tatsächlichen Genre-Durchschnitt des Hauses aus 25/26</b> gehalten.
-      ${rot>0?`<b>${rot} Produktion(en) liegen mehr als 10 Punkte über dem Ist</b> – dort steht die Saisonbilanz auf einer Annahme, die das Haus in diesem Genre noch nie erreicht hat.`:"Keine Annahme liegt mehr als 10 Punkte über dem Ist."}
-      ${gelb>0?` ${gelb} weitere liegen leicht darüber.`:""} Das ist keine Aufforderung, tiefer zu planen – aber jede grüne Zahl über dem Ist braucht ein Argument, das über Optimismus hinausgeht.</div>
-    <table><tr><th>Produktion</th><th class="zahl">Annahme</th><th class="zahl">Genre-Ist 25/26</th><th class="zahl">Δ</th><th>Bewertung</th></tr>
-      ${zeilen.map(z=>z.html).join("")}</table>`;
+  const kopf = zeilen.length===0
+    ? `<div class="hinweis">Noch keine Produktion hat eine geplante Verkaufszahl und vollständige Ticketpreise – deshalb gibt es hier nichts zu prüfen.
+        ${ohneRechnung>0?`Für ${ohneRechnung} Produktion(en) fehlen Ticketpreise je Kategorie`:""}${ohneRechnung>0&&ohnePlan>0?", ":""}${ohnePlan>0?`für ${ohnePlan} fehlt der geplante Verkauf`:""}.
+        Diese Prüfung vergleicht die geplante Auslastung mit dem tatsächlichen Genre-Durchschnitt des Hauses aus 25/26 – sie ist erst sinnvoll, wenn die Planzahlen stehen.</div>`
+    : `<div class="${rot>0?"warnbox":"hinweis"}">Verglichen wird die <b>aus verkauften Plätzen berechnete</b> Auslastung mit dem tatsächlichen Genre-Durchschnitt des Hauses aus 25/26.
+        ${rot>0?`<b>${rot} Produktion(en) planen mehr als 10 Punkte über dem Ist</b> – dort steht die Rechnung auf einer Annahme, die das Haus in diesem Genre noch nie erreicht hat.`:"Keine Planung liegt mehr als 10 Punkte über dem Ist."}
+        ${gelb>0?` ${gelb} weitere liegen leicht darüber.`:""}
+        ${ohneRechnung+ohnePlan>0?` Nicht geprüft: ${ohneRechnung+ohnePlan} Produktion(en) ohne vollständige Preise oder ohne geplanten Verkauf.`:""}
+        Die Spalte Break-even zeigt, welche Auslastung die Produktion mindestens braucht – liegt sie über dem Genre-Ist, ist das Risiko strukturell und nicht durch Werbung zu lösen.</div>`;
+  return `<h3>Plausibilitätsprüfung der Auslastungsplanung</h3>
+    ${kopf}
+    ${zeilen.length===0?"":`<table><tr><th>Produktion</th><th class="zahl">geplant</th><th class="zahl">Genre-Ist 25/26</th><th class="zahl">Δ</th><th class="zahl">Break-even</th><th>Bewertung</th></tr>
+      ${zeilen.map(z=>z.html).join("")}</table>`}`;
 }
 function saisonverlaufHTML(){
   const mit = sortiert().filter(v=>zaehltBudget(v) && v.datum);
@@ -1441,7 +1627,7 @@ function druckStarten(){
       </div>
       <div class="dkRechts">
         <span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span>
-        ${a?`<div class="dkMeta">ab ${euro(a.preise[a.preise.length-1]||a.preise[0])}</div>`:""}
+        ${(()=>{ if(!a) return ""; const p=a.kat.filter(k=>k.plaetze>0&&k.preis>0).map(k=>k.preis); return p.length?`<div class="dkMeta">ab ${euro(Math.min.apply(null,p))}</div>`:""; })()}
       </div>
     </div>`;
   });
