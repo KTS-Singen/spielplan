@@ -543,6 +543,9 @@ async function pollServer(){
 function neuZeichnen(){
   const dlg = document.getElementById("vaDialog");
   if(dlg && dlg.open) return;
+  /* v11: nicht neu aufbauen, während jemand in einem Feld steht – sonst springt die Eingabe raus */
+  const fok = document.activeElement;
+  if(fok && /^(INPUT|SELECT|TEXTAREA)$/.test(fok.tagName) && document.getElementById("inhalt").contains(fok)) return;
   kopfzeile();
   zeigeTab(aktuellerTab);
 }
@@ -1206,7 +1209,7 @@ function katAendern(vid, idx, feld, wert){
   const z = Math.max(0, +String(wert).replace(",",".")||0);
   if(feld==="minderung") a.kat[idx].minderung = Math.min(100, z);
   else a.kat[idx][feld] = z;
-  speichern(); zeigeKalkulation();
+  speichern(); kalkAktualisieren(vid);
 }
 function kalkFeldAendern(vid, feld, wert){
   const v = daten.veranstaltungen.find(x=>x.vid===vid); if(!v) return;
@@ -1216,7 +1219,7 @@ function kalkFeldAendern(vid, feld, wert){
   } else {
     a[feld] = Math.max(0, +wert||0);
   }
-  speichern(); zeigeKalkulation();
+  speichern(); kalkAktualisieren(vid);
 }
 function saisonBilanz(){
   const kb = kostenBasis();
@@ -1548,18 +1551,47 @@ function kostenAusweisHTML(kb){
     <p class="fussnote">Dieselbe Rechnung liefert die Zahlen im Reiter Übersicht und in der strategischen Analyse. Eine abweichende Gesamtsumme kann es nicht mehr geben.</p>
   </details>`;
 }
-function katTabelleHTML(v){
-  const a = analyseVon(v), r = rechnung(v);
+/* ================= v11: EINGABE OHNE NEUAUFBAU =================
+   Früher zeichnete jede Eingabe den ganzen Reiter neu – dabei verschwand der aufgeklappte
+   Bereich und der Cursor sprang aus dem Feld. Jetzt bleiben alle Eingabefelder stehen;
+   aktualisiert werden ausschließlich die daraus berechneten Anzeigen. */
+let kalkOffen = {};
+function kalkToggle(vid, offen){ kalkOffen[vid] = !!offen; }
+function katEingabeHTML(v){
+  const a = analyseVon(v);
   const zeilen = a.kat.map((k,i)=>`<tr>
     <td>${k.name}</td>
     <td class="zahl"><input type="number" min="0" step="10" style="width:90px" value="${k.plaetze}" onchange="katAendern(${v.vid},${i},'plaetze',this.value)"></td>
     <td class="zahl"><input type="number" min="0" step="1" style="width:90px" value="${k.preis}" onchange="katAendern(${v.vid},${i},'preis',this.value)"> €</td>
     <td class="zahl"><input type="number" min="0" max="100" step="1" style="width:70px" value="${k.minderung}" onchange="katAendern(${v.vid},${i},'minderung',this.value)"> %</td>
-    <td class="zahl">${k.plaetze>0&&k.preis>0?euro(k.plaetze*k.preis):"–"}</td>
-    <td class="zahl">${k.plaetze>0&&k.preis>0?(k.preis*(1-k.minderung/100)*nettoFaktor()).toFixed(2).replace(".",",")+" €":"–"}</td>
+    <td class="zahl" id="katMax_${v.vid}_${i}">–</td>
+    <td class="zahl" id="katNetto_${v.vid}_${i}">–</td>
   </tr>`).join("");
-  const rechenweg = r.vollstaendig ? `
-    <table class="kalkTab" style="margin-top:10px;">
+  return `<table class="kalkTab">
+      <tr><th>Preiskategorie</th><th class="zahl">verkaufbare Plätze</th><th class="zahl">Preis brutto</th><th class="zahl">Erlösminderung</th><th class="zahl">Bruttoumsatz max.</th><th class="zahl">netto je Ticket</th></tr>
+      ${zeilen}
+    </table>
+    <div class="parambox" style="margin-top:10px;">
+      <div class="feld"><label>Geplanter Verkauf (Plätze)</label>
+        <input type="number" min="0" style="width:110px" id="verkauft_${v.vid}" value="${a.verkauft===null||a.verkauft===undefined?"":Math.round(a.verkauft)}" placeholder="leer = offen" onchange="kalkFeldAendern(${v.vid},'verkauft',this.value)"></div>
+      <div class="feld"><label>Gesperrte Plätze (informativ)</label>
+        <input type="number" min="0" style="width:110px" value="${+a.gesperrt||0}" onchange="kalkFeldAendern(${v.vid},'gesperrt',this.value)"></div>
+      <div class="fussnote" style="flex:1;min-width:240px;" id="planFolge_${v.vid}"></div>
+    </div>
+    <div id="ausgabe_${v.vid}"></div>`;
+}
+function planFolgeHTML(v){
+  const r = rechnung(v);
+  if(!r.vollstaendig) return "Sobald für jede genutzte Kategorie Plätze und Preis eingetragen sind, erscheint hier die Auslastung.";
+  if(r.verkauft===null) return "Solange hier nichts steht, weist das Tool für diese Produktion keinen Erlös und kein Ergebnis aus. Die Auslastung wird nicht geschätzt, sondern aus verkauften Plätzen und Kapazität berechnet.";
+  return `Auslastung ${r.auslastung.toFixed(1).replace(".",",")} % · Nettoerlös ${euro(r.erloes)} · Ergebnis <b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b><br>Verteilung: ${r.verteilung.map((n,i)=>`${r.zeilen[i].name}: ${Math.round(n)}`).join(" · ")}`;
+}
+function kalkAusgabeHTML(v){
+  const r = rechnung(v);
+  if(!r.vollstaendig){
+    return `<div class="warnbox"><b>${r.grund==="Ticketpreise noch nicht vollständig hinterlegt"?"Ticketpreise noch nicht vollständig hinterlegt":"Nicht berechenbar"}</b> – ${r.grund}${r.fehlend.length?": "+r.fehlend.join(", "):""}. Bis dahin werden für diese Produktion weder Erlöse noch Durchschnittspreise, Break-even-Werte noch Ergebnisse ausgewiesen.</div>`;
+  }
+  return `<table class="kalkTab" style="margin-top:10px;">
       <tr><th>Rechenweg</th><th class="zahl">Wert</th></tr>
       <tr><td>Berücksichtigte Gesamtkosten (Gage + Nebenkosten dieser Produktion)</td><td class="zahl">${euro(r.kosten)}</td></tr>
       <tr><td>Verkaufbare Plätze (Summe der Kategorien)</td><td class="zahl">${r.kapazitaet}</td></tr>
@@ -1573,31 +1605,11 @@ function katTabelleHTML(v){
     <p class="fussnote">Angenommene Verkaufsverteilung im Break-even, proportional zu den Platzanteilen der Kategorien:
       ${r.beVerteilung.map((n,i)=>`${r.zeilen[i]?r.zeilen[i].name:"?"}: ${Math.round(n)}`).join(" · ")}.
       Der gewichtete Durchschnitt entsteht ausschließlich aus den hinterlegten Preisen und Platzanzahlen – er wird weder aus den Kosten noch aus einer Auslastungsannahme abgeleitet.</p>
-    ${r.erreichbar?"":'<div class="rotbox">Break-even innerhalb der verfügbaren Kapazität nicht erreichbar.</div>'}
-    <div class="parambox" style="margin-top:10px;">
-      <div class="feld"><label>Geplanter Verkauf (Plätze)</label>
-        <input type="number" min="0" style="width:110px" value="${r.verkauft===null?"":Math.round(r.verkauft)}" placeholder="leer = offen" onchange="kalkFeldAendern(${v.vid},'verkauft',this.value)"></div>
-      <div class="feld"><label>Gesperrte Plätze (informativ)</label>
-        <input type="number" min="0" style="width:110px" value="${r.gesperrt}" onchange="kalkFeldAendern(${v.vid},'gesperrt',this.value)"></div>
-      <div class="fussnote" style="flex:1;min-width:220px;">${r.verkauft===null
-        ? "Solange hier nichts steht, weist das Tool für diese Produktion keinen Erlös und kein Ergebnis aus. Die Auslastung wird nicht mehr geschätzt, sondern aus verkauften Plätzen und Kapazität berechnet."
-        : `Auslastung ${r.auslastung.toFixed(1).replace(".",",")} % · Nettoerlös ${euro(r.erloes)} · Ergebnis <b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b><br>Verteilung: ${r.verteilung.map((n,i)=>`${r.zeilen[i].name}: ${Math.round(n)}`).join(" · ")}`}</div>
-    </div>`
-    : `<div class="warnbox"><b>${r.grund==="Ticketpreise noch nicht vollständig hinterlegt"?"Ticketpreise noch nicht vollständig hinterlegt":"Nicht berechenbar"}</b> – ${r.grund}${r.fehlend.length?": "+r.fehlend.join(", "):""}. Bis dahin werden für diese Produktion weder Erlöse noch Durchschnittspreise, Break-even-Werte noch Ergebnisse ausgewiesen.</div>`;
-  return `<table class="kalkTab">
-      <tr><th>Preiskategorie</th><th class="zahl">verkaufbare Plätze</th><th class="zahl">Preis brutto</th><th class="zahl">Erlösminderung</th><th class="zahl">Bruttoumsatz max.</th><th class="zahl">netto je Ticket</th></tr>
-      ${zeilen}
-    </table>${rechenweg}`;
+    ${r.erreichbar?"":'<div class="rotbox">Break-even innerhalb der verfügbaren Kapazität nicht erreichbar.</div>'}`;
 }
-function zeigeKalkulation(){
-  const kb = kostenBasis();
-  const liste = sortiert().filter(zaehltBudget);
-  const b = saisonBilanz();
-  const deckung = +daten.kalk.deckungsbedarf||0;
-  const zeilen = liste.map(v=>{
-    const r = rechnung(v);
-    return `<tr>
-      <td>${datumDE(v.datum)}<div class="fussnote">${wochentag(v.datum)}</div></td>
+function kalkZeileHTML(v){
+  const r = rechnung(v);
+  return `<td>${datumDE(v.datum)}<div class="fussnote">${wochentag(v.datum)}</div></td>
       <td><b>${v.titel||"–"}</b>${v.budgetneutral?' <span class="bneutral">budgetneutral</span>':""}
         <div class="fussnote"><span class="gpille" style="background:${genreFarbe(v.sparte)}">${v.sparte||"–"}</span></div></td>
       <td class="zahl">${euro(r.kosten)}</td>
@@ -1606,32 +1618,17 @@ function zeigeKalkulation(){
       <td class="zahl">${r.vollstaendig?r.beTickets:"–"}</td>
       <td class="zahl ${r.vollstaendig&&!r.erreichbar?"ergVerlust":""}">${r.vollstaendig?r.beProzent.toFixed(1).replace(".",",")+" %":"–"}</td>
       <td class="zahl">${r.vollstaendig&&r.verkauft!==null?Math.round(r.verkauft)+" · "+r.auslastung.toFixed(0)+" %":"–"}</td>
-      <td class="zahl">${r.vollstaendig&&r.ergebnis!==null?`<b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b>`:"–"}</td>
-    </tr>`;
-  }).join("");
-  const details = liste.map(v=>`<details style="margin:8px 0;background:#fff;border:1px solid var(--rand);border-radius:10px;padding:10px 14px;">
-      <summary style="cursor:pointer;font-weight:600;">${datumDE(v.datum)} · ${v.titel} <span class="fussnote">– Preiskategorien und Rechenweg</span></summary>
-      <div style="margin-top:10px;">${katTabelleHTML(v)}</div>
-    </details>`).join("");
-  document.getElementById("inhalt").innerHTML = `
-    <h2>Kalkulation ${daten.saisonAktuell}</h2>
-    <div class="hinweis"><b>So rechnet dieser Reiter:</b> Die Kostenseite ist die Summe der Einzelpositionen jeder Veranstaltung, Gage plus sämtliche erfassten Nebenkosten – dieselbe Rechnung, die auch der Reiter Übersicht und die strategische Analyse verwenden. Die Erlösseite entsteht ausschließlich aus den Preiskategorien, die ihr je Produktion eintragt: Plätze, Bruttopreis und gegebenenfalls eine Erlösminderung. Vom Bruttopreis gehen Umsatzsteuer und VVK-Gebühr ab, der Rest ist der Nettoerlös des Hauses. Fehlt für eine Kategorie mit Plätzen der Preis, weist das Tool für diese Produktion nichts aus – keine Erlöse, keinen Durchschnittspreis, keinen Break-even. Geschätzt wird nichts.</div>
-    <div class="parambox">
-      <div class="feld"><label>Umsatzsteuer auf Tickets</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.ust}" onchange="kalkParam('ust',this.value)"> %</div>
-      <div class="feld"><label>VVK-/Systemgebühr vom Bruttopreis</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.vvk}" onchange="kalkParam('vvk',this.value)"> %</div>
-      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" style="width:120px" value="${deckung}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
-      <div class="feld"><label>Gagen und Nebenkosten sind eingetragen als</label>
-        <select onchange="kalkBasisSetzen(this.value)">
-          <option value="netto" ${daten.kalk.kostenbasis!=="brutto"?"selected":""}>Nettobeträge (ohne USt)</option>
-          <option value="brutto" ${daten.kalk.kostenbasis==="brutto"?"selected":""}>Bruttobeträge (mit USt)</option>
-        </select></div>
-      <div class="fussnote" style="flex:1;min-width:220px;">Hausvorgabe: 7 % USt, 10 % VVK-/Systemgebühr. Der Deckungsbedarf ist die Summe aus Marketing, Aufbau und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
-    </div>
-    <div class="karten">
+      <td class="zahl">${r.vollstaendig&&r.ergebnis!==null?`<b class="${r.ergebnis>=0?"ergGewinn":"ergVerlust"}">${r.ergebnis>=0?"+":""}${euro(r.ergebnis)}</b>`:"–"}</td>`;
+}
+function kalkKopfHTML(){
+  const kb = kostenBasis();
+  const b = saisonBilanz();
+  const deckung = +daten.kalk.deckungsbedarf||0;
+  return `<div class="karten">
       <div class="karte"><div class="wert">${euro(kb.gesamt)}</div><div class="label">Gagen und Nebenkosten, ${kb.anzahlAktiv} Produktionen ohne „abgesagt"</div></div>
       <div class="karte"><div class="wert">${euro(kb.budgetwirksam)}</div><div class="label">davon budgetwirksam – identisch mit dem Wert im Reiter Übersicht</div></div>
       <div class="karte"><div class="wert">${b.kalkulierbar} / ${b.anzahl}</div><div class="label">Produktionen mit vollständigen Ticketpreisen</div></div>
-      <div class="karte"><div class="wert">${b.erloes===null?"nicht berechenbar":euro(b.erloes)}</div><div class="label">Nettoerlöse ${b.erloes===null?"– es fehlen Preise oder Verkaufsplanungen":"nach geplantem Verkauf"}</div></div>
+      <div class="karte"><div class="wert" style="${b.erloes===null?"font-size:19px":""}">${b.erloes===null?"nicht berechenbar":euro(b.erloes)}</div><div class="label">Nettoerlöse ${b.erloes===null?"– es fehlen Preise oder Verkaufsplanungen":"nach geplantem Verkauf"}</div></div>
     </div>
     ${kostenAusweisHTML(kb)}
     ${b.offen>0?`<div class="warnbox">Für <b>${b.offen} von ${b.anzahl} Produktionen</b> sind die Ticketpreise noch nicht vollständig hinterlegt. Solange das so ist, gibt es kein Saisonergebnis und keine Deckungsbedarfsrechnung – beides erschiene sonst als belastbare Zahl, obwohl es geraten wäre.</div>`:""}
@@ -1643,19 +1640,79 @@ function zeigeKalkulation(){
       <tr class="summe"><td>Deckungsbeitrag der Produktionen</td><td class="zahl">${b.ergebnis>=0?"+":""}${euro(b.ergebnis)}</td></tr>
       <tr><td>./. Deckungsbedarf Saison (Marketing, Aufbau, Licht &amp; Ton)</td><td class="zahl">− ${euro(deckung)}</td></tr>
       <tr class="ergebnis"><td>Ergebnis nach Deckungsbedarf</td><td class="zahl">${(b.ergebnis-deckung)>=0?"+":""}${euro(b.ergebnis-deckung)}</td></tr>
-    </table>`:""}
+    </table>`:""}`;
+}
+/* Aktualisiert nur die berechneten Anzeigen – kein Eingabefeld wird angefasst,
+   der aufgeklappte Bereich bleibt offen, der Cursor bleibt, wo er ist. */
+function kalkAktualisieren(vid){
+  const v = daten.veranstaltungen.find(x=>x.vid===vid);
+  if(!v || aktuellerTab!=="kalkulation") return;
+  const a = analyseVon(v), r = rechnung(v), nf = nettoFaktor();
+  a.kat.forEach((k,i)=>{
+    const m = document.getElementById("katMax_"+vid+"_"+i);
+    if(m) m.textContent = (k.plaetze>0&&k.preis>0) ? euro(k.plaetze*k.preis) : "–";
+    const n = document.getElementById("katNetto_"+vid+"_"+i);
+    if(n) n.textContent = (k.plaetze>0&&k.preis>0) ? (k.preis*(1-k.minderung/100)*nf).toFixed(2).replace(".",",")+" €" : "–";
+  });
+  const aus = document.getElementById("ausgabe_"+vid); if(aus) aus.innerHTML = kalkAusgabeHTML(v);
+  const pf = document.getElementById("planFolge_"+vid); if(pf) pf.innerHTML = planFolgeHTML(v);
+  const zeile = document.getElementById("kalkZeile_"+vid); if(zeile) zeile.innerHTML = kalkZeileHTML(v);
+  const kopf = document.getElementById("kalkKopf"); if(kopf) kopf.innerHTML = kalkKopfHTML();
+  const summe = document.getElementById("kalkSumme"); if(summe) summe.innerHTML = kalkSummeHTML();
+}
+function kalkSummeHTML(){
+  const kb = kostenBasis(), b = saisonBilanz();
+  const liste = sortiert().filter(zaehltBudget);
+  return `<td colspan="2">Summe ${liste.length} Produktionen</td><td class="zahl">${euro(kb.gesamt)}</td>
+      <td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td>
+      <td class="zahl">${b.ergebnis===null?"nicht berechenbar":((b.ergebnis>=0?"+":"")+euro(b.ergebnis))}</td>`;
+}
+function zeigeKalkulation(){
+  const liste = sortiert().filter(zaehltBudget);
+  const zeilen = liste.map(v=>`<tr id="kalkZeile_${v.vid}">${kalkZeileHTML(v)}</tr>`).join("");
+  const details = liste.map(v=>`<details id="kalkBlock_${v.vid}" ${kalkOffen[v.vid]?"open":""} ontoggle="kalkToggle(${v.vid}, this.open)"
+      style="margin:8px 0;background:#fff;border:1px solid var(--rand);border-radius:10px;padding:10px 14px;">
+      <summary style="cursor:pointer;font-weight:600;">${datumDE(v.datum)} · ${v.titel} <span class="fussnote">– Preiskategorien und Rechenweg</span></summary>
+      <div style="margin-top:10px;">${katEingabeHTML(v)}</div>
+    </details>`).join("");
+  document.getElementById("inhalt").innerHTML = `
+    <h2>Kalkulation ${daten.saisonAktuell}</h2>
+    <div class="hinweis"><b>So rechnet dieser Reiter:</b> Die Kostenseite ist die Summe der Einzelpositionen jeder Veranstaltung, Gage plus sämtliche erfassten Nebenkosten – dieselbe Rechnung, die auch der Reiter Übersicht und die strategische Analyse verwenden. Die Erlösseite entsteht ausschließlich aus den Preiskategorien, die ihr je Produktion eintragt: Plätze, Bruttopreis und gegebenenfalls eine Erlösminderung. Vom Bruttopreis gehen Umsatzsteuer und VVK-Gebühr ab, der Rest ist der Nettoerlös des Hauses. Fehlt für eine Kategorie mit Plätzen der Preis, weist das Tool für diese Produktion nichts aus – keine Erlöse, keinen Durchschnittspreis, keinen Break-even. Geschätzt wird nichts.</div>
+    <div class="parambox">
+      <div class="feld"><label>Umsatzsteuer auf Tickets</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.ust}" onchange="kalkParam('ust',this.value)"> %</div>
+      <div class="feld"><label>VVK-/Systemgebühr vom Bruttopreis</label><input type="number" step="0.5" style="width:80px" value="${daten.kalk.vvk}" onchange="kalkParam('vvk',this.value)"> %</div>
+      <div class="feld"><label>Deckungsbedarf Saison (€)</label><input type="number" step="1000" style="width:120px" value="${+daten.kalk.deckungsbedarf||0}" onchange="kalkParam('deckungsbedarf',this.value)"></div>
+      <div class="feld"><label>Gagen und Nebenkosten sind eingetragen als</label>
+        <select onchange="kalkBasisSetzen(this.value)">
+          <option value="netto" ${daten.kalk.kostenbasis!=="brutto"?"selected":""}>Nettobeträge (ohne USt)</option>
+          <option value="brutto" ${daten.kalk.kostenbasis==="brutto"?"selected":""}>Bruttobeträge (mit USt)</option>
+        </select></div>
+      <div class="fussnote" style="flex:1;min-width:220px;">Hausvorgabe: 7 % USt, 10 % VVK-/Systemgebühr. Der Deckungsbedarf ist die Summe aus Marketing, Aufbau und Licht &amp; Ton für die ganze Saison – bewusst außerhalb der Einzelkalkulation.</div>
+    </div>
+    <div id="kalkKopf">${kalkKopfHTML()}</div>
     <h3>Alle Produktionen</h3>
     <table class="kalkTab">
       <tr><th>Datum</th><th>Produktion</th><th class="zahl">Gage + NK</th><th class="zahl">Plätze</th><th class="zahl">Ø netto/Ticket</th>
         <th class="zahl">Break-even Plätze</th><th class="zahl">Break-even %</th><th class="zahl">geplanter Verkauf</th><th class="zahl">Ergebnis</th></tr>
       ${zeilen}
-      <tr class="summe"><td colspan="2">Summe ${liste.length} Produktionen</td><td class="zahl">${euro(kb.gesamt)}</td>
-        <td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td><td class="zahl">–</td>
-        <td class="zahl">${b.ergebnis===null?"nicht berechenbar":((b.ergebnis>=0?"+":"")+euro(b.ergebnis))}</td></tr>
+      <tr class="summe" id="kalkSumme">${kalkSummeHTML()}</tr>
     </table>
     <h3 style="margin-top:20px;">Preiskategorien je Produktion</h3>
-    <p class="fussnote">Je Kategorie die verkaufbaren Plätze und den regulären Bruttopreis eintragen, bei Bedarf eine Erlösminderung in Prozent für Ermäßigungen. Daraus berechnet das Tool maximalen Bruttoumsatz, Nettoerlös, gewichteten Durchschnittserlös, Break-even in Plätzen und Break-even-Auslastung. Die Verkaufsverteilung folgt den Platzanteilen der Kategorien; ist eine Kategorie ausgeschöpft, wandert der Rest auf die übrigen.</p>
+    <p class="fussnote">Je Kategorie die verkaufbaren Plätze und den regulären Bruttopreis eintragen, bei Bedarf eine Erlösminderung in Prozent für Ermäßigungen. Daraus berechnet das Tool maximalen Bruttoumsatz, Nettoerlös, gewichteten Durchschnittserlös, Break-even in Plätzen und Break-even-Auslastung. Die Verkaufsverteilung folgt den Platzanteilen der Kategorien; ist eine Kategorie ausgeschöpft, wandert der Rest auf die übrigen.
+      Der aufgeklappte Bereich bleibt beim Eintragen offen – die Zahlen rechts aktualisieren sich sofort, ohne dass die Seite neu aufgebaut wird.</p>
     ${details}`;
+  liste.forEach(v=>{ if(kalkOffen[v.vid]) kalkAktualisieren(v.vid); });
+  liste.forEach(v=>{
+    const aus = document.getElementById("ausgabe_"+v.vid); if(aus && !aus.innerHTML) aus.innerHTML = kalkAusgabeHTML(v);
+    const pf = document.getElementById("planFolge_"+v.vid); if(pf && !pf.innerHTML) pf.innerHTML = planFolgeHTML(v);
+    const a = analyseVon(v), nf = nettoFaktor();
+    a.kat.forEach((k,i)=>{
+      const m = document.getElementById("katMax_"+v.vid+"_"+i);
+      if(m) m.textContent = (k.plaetze>0&&k.preis>0) ? euro(k.plaetze*k.preis) : "–";
+      const n = document.getElementById("katNetto_"+v.vid+"_"+i);
+      if(n) n.textContent = (k.plaetze>0&&k.preis>0) ? (k.preis*(1-k.minderung/100)*nf).toFixed(2).replace(".",",")+" €" : "–";
+    });
+  });
 }
 
 /* ================= v4: PLAUSIBILITÄT & SAISONVERLAUF (Ergänzung der Analyse) ================= */
